@@ -3,30 +3,37 @@
 <head>
   <meta charset="utf-8">
   <title>IT Chat Admin</title>
-  <style>
-    body { font-family: sans-serif; margin: 20px; display: flex; flex-direction: column; height: 95vh; box-sizing: border-box; }
-    h1 { margin-top: 0; }
-    #clients { border: 1px solid #ccc; height: 150px; overflow-y: auto; margin-bottom: 20px; flex-shrink: 0; }
-    .client { padding: 8px; border-bottom: 1px solid #eee; cursor: pointer; }
-    .client:hover { background: #f9f9f9; }
-    .client.selected { background: #eef; border-left: 4px solid #33f; }
-    #chat-log { flex-grow: 1; border: 1px solid #ccc; overflow-y: auto; margin-bottom: 10px; padding: 10px; background: #fafafa; }
-    .msg { margin-bottom: 8px; line-height: 1.4; white-space: pre-wrap; }
-    .msg-it { color: #007bff; }
-    .msg-client { color: #28a745; }
-    .timestamp { font-size: 0.8em; color: #999; margin-right: 5px; }
-    #controls { display: flex; gap: 10px; flex-shrink: 0; }
-    #message { flex-grow: 1; resize: none; padding: 5px; }
-    #send { padding: 0 20px; cursor: pointer; }
-  </style>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>IT Chat Admin</h1>
-  <div id="clients"></div>
-  <div id="chat-log"></div>
-  <div id="controls">
-    <textarea id="message" rows="2" placeholder="Type message to selected client..."></textarea>
-    <button id="send">Send</button>
+  <div class="container">
+    <div class="client-list-container">
+      <ul id="client-list"></ul>
+    </div>
+    <div class="chat-container">
+      <div class="chat-header" id="chat-header">
+        Select a client to begin chatting
+        <button id="settings-button" class="settings-button">⚙️</button>
+      </div>
+      <div class="chat-messages" id="chat-messages">
+        <!-- Messages will be appended here -->
+      </div>
+      <div class="chat-input">
+        <input type="text" id="message-input" placeholder="Type a message..." disabled>
+        <button id="send-button" disabled>Send</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="settings-modal" class="modal">
+    <div class="modal-content">
+      <span class="close-button">&times;</span>
+      <h2>Server Settings</h2>
+      <label for="server-port-input">Server Port:</label>
+      <input type="number" id="server-port-input">
+      <button id="save-server-settings">Save</button>
+      <div id="server-settings-status" class="settings-status"></div>
+    </div>
   </div>
 
   <script src="admin.js"></script>
