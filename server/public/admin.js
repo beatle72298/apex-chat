@@ -13,7 +13,16 @@ function appendMessage(data) {
   const time = new Date(data.timestamp).toLocaleTimeString();
   const fromLabel = data.from === "IT" ? `IT -> ${data.to || 'Client'}` : `${data.from} -> IT`;
   
-  div.innerHTML = `<span class="timestamp">[${time}]</span> <strong>${fromLabel}:</strong> ${data.message}`;
+  // Using spans to separate metadata from the message body
+  const meta = document.createElement("span");
+  meta.innerHTML = `<span class="timestamp">[${time}]</span> <strong>${fromLabel}:</strong> `;
+  
+  const text = document.createElement("span");
+  text.textContent = data.message;
+  
+  div.appendChild(meta);
+  div.appendChild(text);
+  
   chatLog.appendChild(div);
   chatLog.scrollTop = chatLog.scrollHeight;
 }

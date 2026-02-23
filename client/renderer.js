@@ -8,10 +8,15 @@ function appendMessage(from, message, isMe = false) {
   
   const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   
-  // Replace newlines with <br> for HTML display
-  const formattedMessage = message.replace(/\n/g, '<br>');
+  const meta = document.createElement("span");
+  meta.innerHTML = `<span class="timestamp">[${time}]</span> <strong>${from}:</strong> `;
   
-  div.innerHTML = `<span class="timestamp">[${time}]</span> <strong>${from}:</strong> ${formattedMessage}`;
+  const text = document.createElement("span");
+  text.textContent = message;
+  
+  div.appendChild(meta);
+  div.appendChild(text);
+  
   chatLog.appendChild(div);
   chatLog.scrollTop = chatLog.scrollHeight;
 }
