@@ -19,7 +19,7 @@ function createChatWindow() {
 
   chatWindow = new BrowserWindow({
     width: 400,
-    height: 250,
+    height: 450,
     alwaysOnTop: true,
     skipTaskbar: false,
     resizable: false,
