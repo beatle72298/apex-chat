@@ -1,3 +1,4 @@
 {
-    "serverUrl": "http://localhost:2008"
+    "serverUrl": "http://localhost:2008",
+    "theme": "system"
 }

@@ -3,6 +3,33 @@ const replyBox = document.getElementById("reply");
 const sendBtn = document.getElementById("send");
 const settingsBtn = document.getElementById("open-settings");
 
+function applyTheme(theme) {
+  const isDark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+}
+
+// Handle initial theme
+window.electronAPI.onCurrentConfig((_event, config) => {
+  applyTheme(config.theme || 'system');
+});
+window.electronAPI.getConfig();
+
+// Handle theme changes
+window.electronAPI.onThemeChanged((_event, theme) => {
+  applyTheme(theme);
+});
+
+// Listen for system theme changes
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+  // Only re-apply if we are in system mode
+  window.electronAPI.onCurrentConfig((_event, config) => {
+    if ((config.theme || 'system') === 'system') {
+      applyTheme('system');
+    }
+  });
+  window.electronAPI.getConfig();
+});
+
 function formatMessage(text) {
   if (!text) return "";
   

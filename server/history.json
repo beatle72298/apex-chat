@@ -7,7 +7,7 @@
       "platform": "win32"
     },
     "status": "online",
-    "lastSeen": "2026-02-24T20:45:55.062Z",
+    "lastSeen": "2026-02-24T21:00:01.765Z",
     "messages": [
       {
         "from": "IT Support",
@@ -313,6 +313,18 @@
         "from": "Apex RenderSys2@Apex-RenderSys2",
         "message": "And I am chatty",
         "timestamp": "2026-02-24T20:47:41.834Z"
+      },
+      {
+        "from": "Joe",
+        "to": "Apex RenderSys2@Apex-RenderSys2",
+        "message": "Chatty cathy is pretty awesome",
+        "timestamp": "2026-02-24T20:57:14.582Z"
+      },
+      {
+        "from": "Joe",
+        "to": "Apex RenderSys2@Apex-RenderSys2",
+        "message": "but I'm not sure",
+        "timestamp": "2026-02-24T20:57:26.287Z"
       }
     ]
   }

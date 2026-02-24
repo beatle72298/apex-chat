@@ -17,8 +17,24 @@ const settingsModal = document.getElementById('settings-modal');
 const closeButton = settingsModal.querySelector('.close-button');
 const serverPortInput = document.getElementById('server-port-input');
 const adminNameInput = document.getElementById('admin-name-input');
+const themeSelect = document.getElementById('theme-select');
 const saveServerSettingsButton = document.getElementById('save-server-settings');
 const serverSettingsStatus = document.getElementById('server-settings-status');
+
+let currentTheme = 'system';
+
+function applyTheme(theme) {
+    currentTheme = theme;
+    const isDark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+}
+
+// Listen for system theme changes
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+    if (currentTheme === 'system') {
+        applyTheme('system');
+    }
+});
 
 // --- Settings Modal Logic ---
 settingsButton.addEventListener('click', async () => {
@@ -31,6 +47,7 @@ settingsButton.addEventListener('click', async () => {
         const config = await res.json();
         serverPortInput.value = config.port;
         adminNameInput.value = config.adminName || "IT";
+        themeSelect.value = config.theme || "system";
     } catch (err) {
         console.error("Error fetching server config:", err);
         serverSettingsStatus.textContent = "Error fetching config.";
@@ -53,6 +70,7 @@ window.addEventListener('click', (event) => {
 saveServerSettingsButton.addEventListener('click', async () => {
     const newPort = parseInt(serverPortInput.value, 10);
     const newAdminName = adminNameInput.value.trim();
+    const newTheme = themeSelect.value;
 
     if (isNaN(newPort) || newPort <= 0) {
         serverSettingsStatus.textContent = "Please enter a valid port number.";
@@ -70,11 +88,12 @@ saveServerSettingsButton.addEventListener('click', async () => {
         const res = await fetch('/api/config', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ port: newPort, adminName: newAdminName })
+            body: JSON.stringify({ port: newPort, adminName: newAdminName, theme: newTheme })
         });
         if (res.ok) {
             serverSettingsStatus.textContent = "Settings saved! Restart server for port changes to take effect.";
             serverSettingsStatus.style.color = 'green';
+            applyTheme(newTheme);
         } else {
             const { error } = await res.json();
             serverSettingsStatus.textContent = `Error saving settings: ${error}`;
@@ -330,3 +349,11 @@ messageInputEl.onkeydown = (e) => {
 };
 
 connect();
+
+// Load initial theme
+fetch('/api/config')
+    .then(res => res.json())
+    .then(config => {
+        applyTheme(config.theme || 'system');
+    })
+    .catch(err => console.error("Error loading initial theme:", err));

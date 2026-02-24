@@ -1,10 +1,47 @@
 /* Basic Layout */
+:root {
+    --bg-color: #f0f2f5;
+    --sidebar-bg: #fff;
+    --main-bg: #f0f2f5;
+    --header-bg: #f9f9f9;
+    --text-color: #333;
+    --border-color: #ddd;
+    --item-hover: #f5f5f5;
+    --item-selected: #e4efff;
+    --msg-client-bg: #e9e9eb;
+    --msg-client-text: #333;
+    --msg-it-bg: #007bff;
+    --msg-it-text: white;
+    --input-bg: #fff;
+    --timestamp-color: #888;
+    --modal-bg: #fefefe;
+}
+
+[data-theme="dark"] {
+    --bg-color: #1a1a1a;
+    --sidebar-bg: #2d2d2d;
+    --main-bg: #1a1a1a;
+    --header-bg: #2d2d2d;
+    --text-color: #e0e0e0;
+    --border-color: #444;
+    --item-hover: #3d3d3d;
+    --item-selected: #1e3a5f;
+    --msg-client-bg: #3d3d3d;
+    --msg-client-text: #e0e0e0;
+    --msg-it-bg: #007bff;
+    --msg-it-text: white;
+    --input-bg: #3d3d3d;
+    --timestamp-color: #aaa;
+    --modal-bg: #2d2d2d;
+}
+
 body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     margin: 0;
     display: flex;
     height: 100vh;
-    background-color: #f0f2f5;
+    background-color: var(--bg-color);
+    color: var(--text-color);
 }
 
 .container {
@@ -15,9 +52,9 @@ body {
 
 .client-list-container {
     flex: 0 0 280px;
-    border-right: 1px solid #ddd;
+    border-right: 1px solid var(--border-color);
     overflow-y: auto;
-    background-color: #fff;
+    background-color: var(--sidebar-bg);
 }
 
 .chat-container {
@@ -28,8 +65,8 @@ body {
 
 .chat-header {
     padding: 15px;
-    border-bottom: 1px solid #ddd;
-    background-color: #f9f9f9;
+    border-bottom: 1px solid var(--border-color);
+    background-color: var(--header-bg);
     font-weight: bold;
     display: flex;
     justify-content: space-between;
@@ -47,7 +84,7 @@ body {
     border: none;
     font-size: 1.2em;
     cursor: pointer;
-    color: #666;
+    color: var(--timestamp-color);
     transition: color 0.2s;
     padding: 5px;
     display: flex;
@@ -56,7 +93,7 @@ body {
 }
 
 .header-button:hover:not(:disabled) {
-    color: #333;
+    color: var(--text-color);
 }
 
 .header-button:disabled {
@@ -87,15 +124,15 @@ body {
 .chat-input {
     display: flex;
     padding: 10px;
-    border-top: 1px solid #ddd;
-    background-color: #fff;
+    border-top: 1px solid var(--border-color);
+    background-color: var(--sidebar-bg);
     align-items: flex-end;
 }
 
 #message-input {
     flex: 1;
     padding: 10px;
-    border: 1px solid #ccc;
+    border: 1px solid var(--border-color);
     border-radius: 10px;
     margin-right: 10px;
     resize: none;
@@ -104,6 +141,8 @@ body {
     line-height: 1.4;
     max-height: 150px;
     overflow-y: auto;
+    background-color: var(--input-bg);
+    color: var(--text-color);
 }
 
 #send-button {
@@ -134,19 +173,21 @@ body {
 
 .client-item {
     padding: 15px;
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid var(--border-color);
     cursor: pointer;
     display: flex;
     align-items: center;
     position: relative;
+    background-color: var(--sidebar-bg);
+    color: var(--text-color);
 }
 
 .client-item:hover {
-    background-color: #f5f5f5;
+    background-color: var(--item-hover);
 }
 
 .client-item.selected {
-    background-color: #e4efff;
+    background-color: var(--item-selected);
 }
 
 .status-indicator {
@@ -176,7 +217,7 @@ body {
 
 .client-details {
     font-size: 0.75em;
-    color: #666;
+    color: var(--timestamp-color);
 }
 
 .unread-badge {
@@ -207,7 +248,7 @@ body {
     font-size: 0.75em;
     font-weight: bold;
     margin-bottom: 4px;
-    color: #666;
+    color: var(--timestamp-color);
 }
 
 .message-from-it .sender-name {
@@ -216,8 +257,8 @@ body {
 }
 
 .message-from-it {
-    background-color: #007bff;
-    color: white;
+    background-color: var(--msg-it-bg);
+    color: var(--msg-it-text);
     margin-left: auto;
 }
 
@@ -232,14 +273,18 @@ body {
 }
 
 .message-from-client {
-    background-color: #e9e9eb;
-    color: #333;
+    background-color: var(--msg-client-bg);
+    color: var(--msg-client-text);
     margin-right: auto;
+}
+
+.message-from-client a {
+    color: var(--msg-it-bg);
 }
 
 .message-timestamp {
     font-size: 0.75em;
-    color: #888;
+    color: var(--timestamp-color);
     margin-top: 5px;
     text-align: right;
 }
@@ -260,20 +305,21 @@ body {
 }
 
 .modal-content {
-    background-color: #fefefe;
+    background-color: var(--modal-bg);
     margin: auto; /* Center the modal */
     padding: 20px;
-    border: 1px solid #888;
+    border: 1px solid var(--border-color);
     width: 80%; /* Could be more responsive */
     max-width: 500px;
     box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2),0 6px 20px 0 rgba(0,0,0,0.19);
     border-radius: 8px;
     position: relative;
     text-align: left;
+    color: var(--text-color);
 }
 
 .close-button {
-    color: #aaa;
+    color: var(--timestamp-color);
     float: right;
     font-size: 28px;
     font-weight: bold;
@@ -284,14 +330,13 @@ body {
 
 .close-button:hover,
 .close-button:focus {
-    color: black;
+    color: var(--text-color);
     text-decoration: none;
     cursor: pointer;
 }
 
 .modal-content h2 {
     margin-top: 0;
-    color: #333;
 }
 
 .modal-content label {
@@ -301,12 +346,15 @@ body {
 }
 
 .modal-content input[type="number"],
-.modal-content input[type="text"] {
+.modal-content input[type="text"],
+.modal-content select {
     width: calc(100% - 22px); /* Adjust for padding and border */
     padding: 10px;
     margin-bottom: 20px;
-    border: 1px solid #ccc;
+    border: 1px solid var(--border-color);
     border-radius: 4px;
+    background-color: var(--input-bg);
+    color: var(--text-color);
 }
 
 .modal-content button {

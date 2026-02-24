@@ -9,12 +9,12 @@ let tray = null;
 let chatWindow = null;
 let ws = null;
 
-let config = { serverUrl: "http://localhost:3000" };
+let config = { serverUrl: "http://localhost:3000", theme: "system" };
 try {
     const rawConfig = fs.readFileSync(path.join(__dirname, 'config.json'), 'utf8');
-    config = JSON.parse(rawConfig);
+    config = { ...config, ...JSON.parse(rawConfig) };
 } catch (err) {
-    console.log("No config.json found or it's invalid. Using default server URL.");
+    console.log("No config.json found or it's invalid. Using default settings.");
 }
 
 let SERVER_URL = config.serverUrl;
@@ -146,6 +146,11 @@ ipcMain.on('save-config', (event, newConfig) => {
     
     fs.writeFileSync(path.join(__dirname, 'config.json'), JSON.stringify(newConfig, null, 4));
     
+    // Notify chat window about theme change
+    if (chatWindow) {
+        chatWindow.webContents.send('theme-changed', config.theme);
+    }
+
     // Restart connection
     allowReconnect = false; // Prevent auto-reconnect from firing while we intentionally restart
     if (ws) {
