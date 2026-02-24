@@ -5,6 +5,11 @@ const themeSelect = document.getElementById('themeSelect');
 const saveBtn = document.getElementById('saveBtn');
 const statusEl = document.getElementById('status');
 
+function applyTheme(theme) {
+    const isDark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+}
+
 // 1. When the window loads, request the current config from the main process
 document.addEventListener('DOMContentLoaded', () => {
     ipcRenderer.send('get-config');
@@ -14,6 +19,12 @@ document.addEventListener('DOMContentLoaded', () => {
 ipcRenderer.on('current-config', (event, config) => {
     serverUrlInput.value = config.serverUrl;
     themeSelect.value = config.theme || 'system';
+    applyTheme(themeSelect.value);
+});
+
+// Update theme preview immediately when changed in dropdown
+themeSelect.addEventListener('change', () => {
+    applyTheme(themeSelect.value);
 });
 
 // 3. When the save button is clicked, send the new data to the main process

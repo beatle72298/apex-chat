@@ -7,7 +7,7 @@
       "platform": "win32"
     },
     "status": "online",
-    "lastSeen": "2026-02-24T21:00:01.765Z",
+    "lastSeen": "2026-02-24T22:15:04.070Z",
     "messages": [
       {
         "from": "IT Support",
@@ -325,6 +325,33 @@
         "to": "Apex RenderSys2@Apex-RenderSys2",
         "message": "but I'm not sure",
         "timestamp": "2026-02-24T20:57:26.287Z"
+      },
+      {
+        "from": "Joe",
+        "to": "Apex RenderSys2@Apex-RenderSys2",
+        "message": "okay",
+        "timestamp": "2026-02-24T22:15:21.709Z"
+      },
+      {
+        "from": "Joe",
+        "to": "Apex RenderSys2@Apex-RenderSys2",
+        "message": "that's cool",
+        "timestamp": "2026-02-24T22:15:24.959Z"
+      },
+      {
+        "from": "Apex RenderSys2@Apex-RenderSys2",
+        "message": "This is message",
+        "timestamp": "2026-02-24T22:16:49.006Z"
+      },
+      {
+        "from": "Apex RenderSys2@Apex-RenderSys2",
+        "message": "poop",
+        "timestamp": "2026-02-24T22:20:50.178Z"
+      },
+      {
+        "from": "Apex RenderSys2@Apex-RenderSys2",
+        "message": "hello?",
+        "timestamp": "2026-02-24T22:21:57.223Z"
       }
     ]
   }

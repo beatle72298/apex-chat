@@ -26,12 +26,14 @@ function createSettingsWindow() {
         settingsWindow.focus();
         return;
     }
+    const iconPath = path.join(__dirname, "icon.png");
     settingsWindow = new BrowserWindow({
         width: 450,
-        height: 300,
+        height: 380,
         title: "Settings",
         alwaysOnTop: true,
         resizable: false,
+        icon: iconPath,
         webPreferences: {
             nodeIntegration: true,
             contextIsolation: false, // Required for ipcRenderer in settings.js
@@ -50,12 +52,14 @@ function createChatWindow() {
     return;
   }
 
+  const iconPath = path.join(__dirname, "icon.png");
   chatWindow = new BrowserWindow({
     width: 400,
     height: 450,
     alwaysOnTop: true,
     skipTaskbar: false,
     resizable: false,
+    icon: iconPath,
     webPreferences: {
       preload: path.join(__dirname, "preload.js")
     }
