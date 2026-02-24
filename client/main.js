@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Tray, Menu, nativeImage } = require("electron");
+const { app, BrowserWindow, Tray, Menu, nativeImage, shell } = require("electron");
 const { ipcMain } = require("electron");
 const path = require("path");
 const os = require("os");
@@ -27,9 +27,11 @@ function createSettingsWindow() {
         return;
     }
     settingsWindow = new BrowserWindow({
-        width: 500,
-        height: 250,
+        width: 450,
+        height: 300,
         title: "Settings",
+        alwaysOnTop: true,
+        resizable: false,
         webPreferences: {
             nodeIntegration: true,
             contextIsolation: false, // Required for ipcRenderer in settings.js
@@ -126,6 +128,14 @@ ipcMain.on("send_reply", (event, message) => {
   }
 });
 
+ipcMain.on("open-link", (event, url) => {
+  shell.openExternal(url);
+});
+
+ipcMain.on("open-settings", () => {
+  createSettingsWindow();
+});
+
 ipcMain.on('get-config', (event) => {
     event.sender.send('current-config', config);
 });
@@ -172,6 +182,7 @@ function createTray() {
 }
 
 app.whenReady().then(() => {
+  Menu.setApplicationMenu(null);
   createTray();
   connectWebSocket();
 

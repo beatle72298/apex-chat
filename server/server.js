@@ -5,12 +5,14 @@ const cors = require("cors");
 const path = require("path");
 const fs = require("fs");
 
-let config = { port: 3000 };
+let config = { port: 3000, adminName: "IT" };
+const historyFile = path.join(__dirname, 'history.json');
+
 try {
     const rawConfig = fs.readFileSync(path.join(__dirname, 'config.json'), 'utf8');
-    config = JSON.parse(rawConfig);
+    config = { ...config, ...JSON.parse(rawConfig) };
 } catch (err) {
-    console.log("No config.json found or it's invalid. Using default port 3000.");
+    console.log("No config.json found or it's invalid. Using default settings.");
 }
 
 const app = express();
@@ -21,8 +23,36 @@ app.use(express.static(path.join(__dirname, "public")));
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 
-const knownClients = {}; // clientId -> { ws, info, status }
+let knownClients = {}; // clientId -> { ws, info, status, messages, lastSeen }
 const admins = new Set(); // Set of admin WebSockets
+
+// Load history on startup
+try {
+    if (fs.existsSync(historyFile)) {
+        const rawHistory = fs.readFileSync(historyFile, 'utf8');
+        knownClients = JSON.parse(rawHistory);
+        // Reset online status for all clients on restart
+        Object.values(knownClients).forEach(client => {
+            client.status = 'offline';
+            delete client.ws;
+        });
+    }
+} catch (err) {
+    console.error("Error loading history:", err);
+}
+
+function saveHistory() {
+    try {
+        const historyToSave = {};
+        for (const [id, client] of Object.entries(knownClients)) {
+            const { ws, ...clientData } = client;
+            historyToSave[id] = clientData;
+        }
+        fs.writeFileSync(historyFile, JSON.stringify(historyToSave, null, 2));
+    } catch (err) {
+        console.error("Error saving history:", err);
+    }
+}
 
 function broadcastClientList() {
   const clientListForAdmins = Object.values(knownClients).map(
@@ -81,6 +111,7 @@ wss.on("connection", (ws) => {
         }
         
         console.log(`Client registered: ${clientId} - ${knownClients[clientId].status}`);
+        saveHistory();
         broadcastClientList();
 
       } else if (data.type === "chat_message") {
@@ -94,6 +125,7 @@ wss.on("connection", (ws) => {
         
         if (knownClients[clientId]) {
             knownClients[clientId].messages.push(messageData);
+            saveHistory();
         }
 
         // Forward client message to all admins
@@ -135,7 +167,7 @@ app.post("/api/send", (req, res) => {
   }
 
   const messageData = {
-    from: "IT",
+    from: config.adminName || "IT",
     to: clientId,
     message,
     timestamp: new Date().toISOString(),
@@ -143,12 +175,13 @@ app.post("/api/send", (req, res) => {
 
   if (client) {
     client.messages.push(messageData);
+    saveHistory();
   }
 
   const payload = JSON.stringify({
     type: "incoming_message",
     message,
-    from: "IT",
+    from: config.adminName || "IT",
     timestamp: messageData.timestamp,
   });
   client.ws.send(payload);
@@ -188,13 +221,7 @@ app.get("/api/clients", (req, res) => {
 
 // REST endpoint to get server configuration
 app.get("/api/config", (req, res) => {
-    try {
-        const currentConfig = JSON.parse(fs.readFileSync(path.join(__dirname, 'config.json'), 'utf8'));
-        res.json(currentConfig);
-    } catch (err) {
-        console.error("Error reading server config:", err);
-        res.status(500).json({ error: "Failed to read server configuration" });
-    }
+    res.json(config);
 });
 
 // REST endpoint to update server configuration
@@ -205,9 +232,8 @@ app.post("/api/config", (req, res) => {
     }
 
     try {
-        fs.writeFileSync(path.join(__dirname, 'config.json'), JSON.stringify(newConfig, null, 4));
-        // Update in-memory config for immediate use, though restart is needed for port change
-        config.port = newConfig.port; 
+        config = { ...config, ...newConfig };
+        fs.writeFileSync(path.join(__dirname, 'config.json'), JSON.stringify(config, null, 4));
         res.json({ message: "Configuration updated successfully. Restart server for port changes to take effect." });
     } catch (err) {
         console.error("Error writing server config:", err);

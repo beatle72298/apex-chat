@@ -12,14 +12,19 @@
     </div>
     <div class="chat-container">
       <div class="chat-header" id="chat-header">
-        Select a client to begin chatting
-        <button id="settings-button" class="settings-button">⚙️</button>
+        <div id="chat-header-text">Select a client to begin chatting</div>
+        <div class="header-buttons">
+            <button id="close-chat-button" class="header-button" style="display: none;">✕</button>
+            <button id="settings-button" class="header-button">⚙️</button>
+        </div>
       </div>
       <div class="chat-messages" id="chat-messages">
-        <!-- Messages will be appended here -->
+        <div class="chat-messages-inner" id="chat-messages-inner">
+          <!-- Messages will be appended here -->
+        </div>
       </div>
       <div class="chat-input">
-        <input type="text" id="message-input" placeholder="Type a message..." disabled>
+        <textarea id="message-input" placeholder="Type a message... (Enter to send, Shift+Enter for new line)" disabled rows="1"></textarea>
         <button id="send-button" disabled>Send</button>
       </div>
     </div>
@@ -31,6 +36,8 @@
       <h2>Server Settings</h2>
       <label for="server-port-input">Server Port:</label>
       <input type="number" id="server-port-input">
+      <label for="admin-name-input">Admin Display Name:</label>
+      <input type="text" id="admin-name-input" placeholder="e.g. IT Support">
       <button id="save-server-settings">Save</button>
       <div id="server-settings-status" class="settings-status"></div>
     </div>

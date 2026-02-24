@@ -1,9 +1,8 @@
-const { contextBridge, ipcMain, ipcRenderer } = require("electron");
+const { contextBridge, ipcRenderer } = require("electron");
 
 contextBridge.exposeInMainWorld("electronAPI", {
   onIncomingMessage: (callback) => ipcRenderer.on("incoming_message", callback),
-  sendReply: (message) => ipcRenderer.send("send_reply", message)
+  sendReply: (message) => ipcRenderer.send("send_reply", message),
+  openLink: (url) => ipcRenderer.send("open-link", url),
+  openSettings: () => ipcRenderer.send("open-settings")
 });
-
-// handle reply from renderer in main process
-ipcRenderer?.on?.("send_reply", () => {});
