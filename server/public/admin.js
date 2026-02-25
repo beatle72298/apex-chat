@@ -22,6 +22,12 @@ const saveServerSettingsButton = document.getElementById('save-server-settings')
 const serverSettingsStatus = document.getElementById('server-settings-status');
 
 let currentTheme = 'system';
+let typingTimeout;
+let isTyping = false;
+
+function getTypingIndicator() {
+    return document.getElementById("typing-indicator");
+}
 
 function applyTheme(theme) {
     currentTheme = theme;
@@ -365,6 +371,7 @@ async function sendMessage() {
             if (ws && ws.readyState === WebSocket.OPEN) {
                 ws.send(JSON.stringify({ type: "typing", isTyping: false, to: selectedClientId }));
             }
+            clearTimeout(typingTimeout);
         } else {
             const { error } = await res.json();
             alert("Error: " + error);

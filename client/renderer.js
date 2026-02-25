@@ -87,12 +87,21 @@ function appendMessage(from, message, isMe = false) {
   div.appendChild(content);
   div.appendChild(meta);
   
-  chatLog.appendChild(div);
+  chatLog.insertBefore(div, typingIndicator);
   chatLog.scrollTop = chatLog.scrollHeight;
 }
 
 window.electronAPI.onIncomingMessage((_event, data) => {
   appendMessage(data.from || "IT", data.message);
+  typingIndicator.style.display = 'none';
+});
+
+// Handle incoming typing status
+window.electronAPI.onTypingStatus((_event, isTyping) => {
+    typingIndicator.style.display = isTyping ? 'flex' : 'none';
+    if (isTyping) {
+        chatLog.scrollTop = chatLog.scrollHeight;
+    }
 });
 
 function sendMessage() {
@@ -103,6 +112,11 @@ function sendMessage() {
   appendMessage("Me", text, true);
   replyBox.value = "";
   replyBox.style.height = 'auto';
+
+  // Stop typing status
+  isTyping = false;
+  window.electronAPI.sendTypingStatus(false);
+  clearTimeout(typingTimeout);
 }
 
 sendBtn.onclick = sendMessage;
