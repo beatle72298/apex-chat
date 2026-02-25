@@ -5,9 +5,11 @@ on:
     branches:
       - main
       - master
+    tags:
+      - 'v*'
 
 permissions:
-  contents: read
+  contents: write
   packages: write
 
 jobs:
@@ -40,14 +42,9 @@ jobs:
 
   client-build:
     runs-on: ${{ matrix.os }}
-
-  client-build:
-    runs-on: ${{ matrix.os }}
-
     strategy:
       matrix:
         os: [windows-latest, macos-latest]
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -78,3 +75,28 @@ jobs:
           path: |
             client/dist/*.exe
             client/dist/*.pkg
+
+  create-release:
+    needs: [client-build, server-docker]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./dist
+          merge-multiple: true
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ github.run_number }}
+          name: Build ${{ github.run_number }}
+          body: |
+            Automated build for commit ${{ github.sha }}
+          draft: false
+          prerelease: false
+          files: |
+            dist/*.exe
+            dist/*.pkg
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
