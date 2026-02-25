@@ -7,7 +7,7 @@
       "platform": "win32"
     },
     "status": "online",
-    "lastSeen": "2026-02-24T22:15:04.070Z",
+    "lastSeen": "2026-02-25T19:34:57.263Z",
     "messages": [
       {
         "from": "IT Support",
@@ -352,6 +352,94 @@
         "from": "Apex RenderSys2@Apex-RenderSys2",
         "message": "hello?",
         "timestamp": "2026-02-24T22:21:57.223Z"
+      },
+      {
+        "from": "Joe",
+        "to": "Apex RenderSys2@Apex-RenderSys2",
+        "message": "hello",
+        "timestamp": "2026-02-25T19:07:34.597Z"
+      },
+      {
+        "from": "Apex RenderSys2@Apex-RenderSys2",
+        "message": "hi welcome",
+        "timestamp": "2026-02-25T19:07:39.032Z"
+      },
+      {
+        "from": "Apex RenderSys2@Apex-RenderSys2",
+        "message": "you're whatever",
+        "timestamp": "2026-02-25T19:07:44.007Z"
+      },
+      {
+        "from": "Apex RenderSys2@Apex-RenderSys2",
+        "message": "Ok",
+        "timestamp": "2026-02-25T19:07:49.375Z"
+      },
+      {
+        "from": "Joe",
+        "to": "Apex RenderSys2@Apex-RenderSys2",
+        "message": "Hi",
+        "timestamp": "2026-02-25T19:24:45.211Z"
+      },
+      {
+        "from": "Joe",
+        "to": "Apex RenderSys2@Apex-RenderSys2",
+        "message": "There was an error loading messages",
+        "timestamp": "2026-02-25T19:24:52.995Z"
+      },
+      {
+        "from": "Joe",
+        "to": "Apex RenderSys2@Apex-RenderSys2",
+        "message": "nope",
+        "timestamp": "2026-02-25T19:25:36.505Z"
+      },
+      {
+        "from": "Apex RenderSys2@Apex-RenderSys2",
+        "message": "okay",
+        "timestamp": "2026-02-25T19:25:39.520Z"
+      },
+      {
+        "from": "Joe",
+        "to": "Apex RenderSys2@Apex-RenderSys2",
+        "message": "hi",
+        "timestamp": "2026-02-25T19:34:31.765Z"
+      },
+      {
+        "from": "Apex RenderSys2@Apex-RenderSys2",
+        "message": "ok",
+        "timestamp": "2026-02-25T19:34:35.266Z"
+      },
+      {
+        "from": "Apex RenderSys2@Apex-RenderSys2",
+        "message": "yeah that's cool",
+        "timestamp": "2026-02-25T19:34:38.978Z"
+      },
+      {
+        "from": "Joe",
+        "to": "Apex RenderSys2@Apex-RenderSys2",
+        "message": "Okay",
+        "timestamp": "2026-02-25T19:35:02.380Z"
+      },
+      {
+        "from": "Joe",
+        "to": "Apex RenderSys2@Apex-RenderSys2",
+        "message": "Well",
+        "timestamp": "2026-02-25T19:35:08.726Z"
+      },
+      {
+        "from": "Joe",
+        "to": "Apex RenderSys2@Apex-RenderSys2",
+        "message": "The interface is functional, but not big",
+        "timestamp": "2026-02-25T19:35:15.701Z"
+      },
+      {
+        "from": "Apex RenderSys2@Apex-RenderSys2",
+        "message": "Yes",
+        "timestamp": "2026-02-25T19:35:19.482Z"
+      },
+      {
+        "from": "Apex RenderSys2@Apex-RenderSys2",
+        "message": "You are correct",
+        "timestamp": "2026-02-25T19:35:22.585Z"
       }
     ]
   }

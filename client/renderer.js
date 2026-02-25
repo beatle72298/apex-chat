@@ -2,6 +2,10 @@ const chatLog = document.getElementById("chat-log");
 const replyBox = document.getElementById("reply");
 const sendBtn = document.getElementById("send");
 const settingsBtn = document.getElementById("open-settings");
+const typingIndicator = document.getElementById("typing-indicator");
+
+let typingTimeout;
+let isTyping = false;
 
 function applyTheme(theme) {
   const isDark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
@@ -107,10 +111,21 @@ settingsBtn.onclick = () => {
   window.electronAPI.openSettings();
 };
 
-// Auto-resize textarea
+// Auto-resize textarea and handle typing status
 replyBox.addEventListener('input', () => {
   replyBox.style.height = 'auto';
   replyBox.style.height = (replyBox.scrollHeight) + 'px';
+
+  if (!isTyping) {
+      isTyping = true;
+      window.electronAPI.sendTypingStatus(true);
+  }
+
+  clearTimeout(typingTimeout);
+  typingTimeout = setTimeout(() => {
+      isTyping = false;
+      window.electronAPI.sendTypingStatus(false);
+  }, 3000);
 });
 
 // Enter to send, Shift+Enter for new line

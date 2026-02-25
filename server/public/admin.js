@@ -108,9 +108,20 @@ saveServerSettingsButton.addEventListener('click', async () => {
 
 
 function renderMessages(messages) {
-    chatMessagesEl.innerHTML = "";
+    // Clear everything but keep/recreate typing indicator at the end
+    chatMessagesEl.innerHTML = `
+        <div id="typing-indicator" class="typing-indicator">
+            <div class="typing-dot"></div>
+            <div class="typing-dot"></div>
+            <div class="typing-dot"></div>
+        </div>
+    `;
+    const indicator = document.getElementById("typing-indicator");
+    indicator.style.display = "none";
+
     messages.forEach(msg => {
-        appendMessage(msg, false); // Don't scroll for each message in history
+        // We append BEFORE the indicator
+        appendMessage(msg, false, indicator);
     });
     chatMessagesContainerEl.scrollTop = chatMessagesContainerEl.scrollHeight; // Scroll to bottom after loading all
 }
@@ -135,7 +146,7 @@ function formatMessage(text) {
     return formatted.replace(/\n/g, "<br>");
 }
 
-function appendMessage(data, scroll = true) {
+function appendMessage(data, scroll = true, beforeElement = null) {
     // If it's not from the selected client, it's from IT/Me
     const isFromMe = data.from !== selectedClientId;
 
@@ -161,7 +172,13 @@ function appendMessage(data, scroll = true) {
     messageDiv.appendChild(content);
     messageDiv.appendChild(meta);
     
-    chatMessagesEl.appendChild(messageDiv);
+    const indicator = beforeElement || document.getElementById("typing-indicator");
+    if (indicator) {
+        chatMessagesEl.insertBefore(messageDiv, indicator);
+    } else {
+        chatMessagesEl.appendChild(messageDiv);
+    }
+
     if (scroll) {
         chatMessagesContainerEl.scrollTop = chatMessagesContainerEl.scrollHeight;
     }
@@ -171,7 +188,13 @@ function deselectClient() {
     selectedClientId = null;
     document.querySelectorAll(".client-item").forEach(el => el.classList.remove("selected"));
     chatHeaderEl.textContent = "Select a client to begin chatting";
-    chatMessagesEl.innerHTML = "";
+    chatMessagesEl.innerHTML = `
+        <div id="typing-indicator" class="typing-indicator">
+            <div class="typing-dot"></div>
+            <div class="typing-dot"></div>
+            <div class="typing-dot"></div>
+        </div>
+    `;
     messageInputEl.value = "";
     messageInputEl.disabled = true;
     sendButtonEl.disabled = true;
@@ -213,12 +236,14 @@ async function selectClient(clientId) {
 
     // Fetch and render history
     try {
-        const res = await fetch(`/api/history/${clientId}`);
+        const res = await fetch(`/api/history/${encodeURIComponent(clientId)}`);
+        if (!res.ok) throw new Error(`Server returned ${res.status}`);
         const history = await res.json();
+        if (!Array.isArray(history)) throw new Error('History data is not an array');
         renderMessages(history);
     } catch (err) {
         console.error("Error fetching history:", err);
-        chatMessagesEl.innerHTML = "<div>Error loading messages.</div>";
+        chatMessagesEl.innerHTML = `<div style="padding: 20px; color: red;">Error loading messages: ${err.message}</div>`;
     }
 }
 
@@ -284,6 +309,8 @@ function connect() {
             // If it's a message for the selected client, append it
             if (conversationId === selectedClientId) {
                 appendMessage(data);
+                const indicator = getTypingIndicator();
+                if (indicator) indicator.style.display = 'none';
             } else {
                 // Otherwise, increment unread and update list (only if it's from a client)
                 if (clients[conversationId] && !data.to) {
@@ -300,6 +327,16 @@ function connect() {
                             newBadge.textContent = clients[conversationId].unread;
                             clientItem.appendChild(newBadge);
                         }
+                    }
+                }
+            }
+        } else if (data.type === "typing") {
+            if (data.from === selectedClientId) {
+                const indicator = getTypingIndicator();
+                if (indicator) {
+                    indicator.style.display = data.isTyping ? 'flex' : 'none';
+                    if (data.isTyping) {
+                        chatMessagesContainerEl.scrollTop = chatMessagesContainerEl.scrollHeight;
                     }
                 }
             }
@@ -324,6 +361,10 @@ async function sendMessage() {
         });
         if (res.ok) {
             messageInputEl.value = "";
+            isTyping = false;
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ type: "typing", isTyping: false, to: selectedClientId }));
+            }
         } else {
             const { error } = await res.json();
             alert("Error: " + error);
@@ -338,6 +379,21 @@ sendButtonEl.onclick = sendMessage;
 messageInputEl.addEventListener('input', () => {
     messageInputEl.style.height = 'auto';
     messageInputEl.style.height = (messageInputEl.scrollHeight) + 'px';
+
+    if (selectedClientId && !isTyping) {
+        isTyping = true;
+        if (ws && ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ type: "typing", isTyping: true, to: selectedClientId }));
+        }
+    }
+
+    clearTimeout(typingTimeout);
+    typingTimeout = setTimeout(() => {
+        isTyping = false;
+        if (ws && ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ type: "typing", isTyping: false, to: selectedClientId }));
+        }
+    }, 3000);
 });
 
 messageInputEl.onkeydown = (e) => {

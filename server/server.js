@@ -138,6 +138,29 @@ wss.on("connection", (ws) => {
             adminWs.send(payload);
           }
         }
+      } else if (data.type === "typing") {
+        // Forward typing status
+        const payload = JSON.stringify({
+          type: "typing",
+          from: isAdmin ? "IT" : clientId,
+          isTyping: data.isTyping,
+          to: data.to // Only used if sent by admin
+        });
+
+        if (isAdmin) {
+          // Forward to specific client
+          const client = knownClients[data.to];
+          if (client && client.ws && client.ws.readyState === WebSocket.OPEN) {
+            client.ws.send(payload);
+          }
+        } else {
+          // Forward to all admins
+          for (const adminWs of admins) {
+            if (adminWs.readyState === WebSocket.OPEN) {
+              adminWs.send(payload);
+            }
+          }
+        }
       }
     } catch (err) {
       console.error("Error handling message", err);

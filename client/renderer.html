@@ -54,7 +54,17 @@
       align-items: center;
       font-weight: bold;
       color: var(--header-text);
+      height: 40px;
     }
+    .banner {
+      height: 50px;
+      width: auto;
+      object-fit: contain;
+    }
+    .banner-dark { display: none; }
+    [data-theme="dark"] .banner-light { display: none; }
+    [data-theme="dark"] .banner-dark { display: block; }
+
     .settings-button {
       background: none;
       border: none;
@@ -74,6 +84,32 @@
       flex-direction: column;
       background: var(--chat-log-bg);
     }
+    .typing-indicator {
+      align-self: flex-start;
+      background: var(--msg-it-bg);
+      padding: 10px 15px;
+      border-radius: 18px;
+      border-bottom-left-radius: 4px;
+      margin-bottom: 15px;
+      display: none;
+      align-items: center;
+      gap: 3px;
+    }
+    .typing-dot {
+      width: 6px;
+      height: 6px;
+      background: var(--timestamp-color);
+      border-radius: 50%;
+      animation: typing-bounce 1s infinite ease-in-out;
+    }
+    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes typing-bounce {
+      0%, 60%, 100% { transform: translateY(0); }
+      30% { transform: translateY(-5px); }
+    }
+
     .msg { 
       margin-bottom: 15px; 
       padding: 10px 15px;
@@ -155,10 +191,19 @@
 </head>
 <body>
   <div class="header">
-    <span>Apex Admin Secure Chat</span>
+    <div class="header-branding">
+        <img src="banner-light.png" class="banner banner-light" alt="Apex Admin">
+        <img src="banner-dark.png" class="banner banner-dark" alt="Apex Admin">
+    </div>
     <button id="open-settings" class="settings-button">⚙️</button>
   </div>
-  <div id="chat-log"></div>
+  <div id="chat-log">
+    <div id="typing-indicator" class="typing-indicator">
+      <div class="typing-dot"></div>
+      <div class="typing-dot"></div>
+      <div class="typing-dot"></div>
+    </div>
+  </div>
   <div id="controls">
     <textarea id="reply" rows="1" placeholder="Type a message..."></textarea>
     <!-- (Enter to send, and Shift+Enter for new line) -->

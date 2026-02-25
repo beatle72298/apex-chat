@@ -8,6 +8,7 @@ const WebSocket = require("ws");
 let tray = null;
 let chatWindow = null;
 let ws = null;
+let messageQueue = [];
 
 let config = { serverUrl: "http://localhost:3000", theme: "system" };
 try {
@@ -101,9 +102,28 @@ function connectWebSocket() {
     try {
       const data = JSON.parse(msg.toString());
       if (data.type === "incoming_message") {
-        // show chat window with message
-        createChatWindow();
-        chatWindow.webContents.send("incoming_message", data);
+        // If window doesn't exist, create it and queue the message
+        if (!chatWindow) {
+          messageQueue.push(data);
+          createChatWindow();
+          chatWindow.webContents.once("did-finish-load", () => {
+            // Send all queued messages once loaded
+            messageQueue.forEach(m => chatWindow.webContents.send("incoming_message", m));
+            messageQueue = [];
+          });
+        } else {
+          // Window exists, but might still be loading if it was just created by another message
+          if (chatWindow.webContents.isLoading()) {
+            messageQueue.push(data);
+          } else {
+            createChatWindow(); // This will just show/focus it
+            chatWindow.webContents.send("incoming_message", data);
+          }
+        }
+      } else if (data.type === "typing") {
+        if (chatWindow && !chatWindow.webContents.isLoading()) {
+          chatWindow.webContents.send("typing_status", data.isTyping);
+        }
       }
     } catch (err) {
       console.error("Error parsing message", err);
@@ -127,6 +147,17 @@ ipcMain.on("send_reply", (event, message) => {
       JSON.stringify({
         type: "chat_message",
         message
+      })
+    );
+  }
+});
+
+ipcMain.on("send-typing-status", (event, isTyping) => {
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(
+      JSON.stringify({
+        type: "typing",
+        isTyping
       })
     );
   }
