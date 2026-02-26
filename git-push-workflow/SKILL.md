@@ -14,6 +14,7 @@ This skill guides the sequential process of safely committing and pushing change
 1. **Check Status**: `git status`
 2. **Review Diffs**: `git diff HEAD`
 3. **Stage Changes**: `git add .` (or specific files if requested)
+
 4. **Prepare Commit**: 
    - Propose a concise, descriptive commit message based on the diff.
    - If multiple features were added, suggest a summary message.
