@@ -1,6 +1,8 @@
 {
   "name": "it-chat-client",
   "version": "1.0.0",
+  "description": "Apex Admin Secure Chat Client",
+  "author": "Apex Admin",
   "main": "main.js",
     "scripts": {
       "start": "electron .",
@@ -12,14 +14,14 @@
       "directories": {
         "output": "dist"
       },
+      "icon": "icon.png",
       "win": {
-        "target": "nsis",
-        "icon": "icon.png"
+        "target": "nsis"
       },
       "mac": {
-        "target": "pkg",
-        "icon": "icon.png"
+        "target": "pkg"
       },
+      
       "files": [
         "**/*",
         "!node_modules/**",
