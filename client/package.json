@@ -20,10 +20,16 @@
       },
       "icon": "icon.png",
       "win": {
-        "target": "nsis"
+        "target": "nsis",
+        "artifactName": "ApexChat-Win-Setup-${version}.${ext}"
       },
       "mac": {
-        "target": "pkg"
+        "target": "pkg",
+        "arch": [
+          "x64",
+          "arm64"
+        ],
+        "artifactName": "ApexChat-Mac-${version}-${arch}.${ext}"
       },
       
       "files": [
