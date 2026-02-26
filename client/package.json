@@ -25,14 +25,7 @@
       },
       "mac": {
         "target": [
-          {
-            "target": "pkg",
-            "arch": "x64"
-          },
-          {
-            "target": "pkg",
-            "arch": "arm64"
-          }
+          "pkg"
         ],
         "artifactName": "ApexChat-Mac-${version}-${arch}.${ext}"
       },
