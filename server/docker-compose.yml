@@ -1,6 +1,6 @@
 services:
   apex-chat-server:
-    image: ghcr.io/beatle72298/apex-chat-server:main
+    image: ghcr.io/beatle72298/apex-chat-server:latest
     ports:
       - "3000:3000"
     volumes:
