@@ -3,6 +3,10 @@
   "version": "1.0.0",
   "description": "Apex Admin Secure Chat Client",
   "author": "Apex Admin",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/beatle72298/apex-chat.git"
+  },
   "main": "main.js",
     "scripts": {
       "start": "electron .",

@@ -1,6 +1,10 @@
 {
   "name": "it-chat-server",
   "version": "1.0.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/beatle72298/apex-chat.git"
+  },
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
