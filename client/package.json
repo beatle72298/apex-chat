@@ -24,10 +24,14 @@
         "artifactName": "ApexChat-Win-Setup-${version}.${ext}"
       },
       "mac": {
-        "target": "pkg",
-        "arch": [
-          "x64",
-          "arm64"
+        "target": [
+          {
+            "target": "pkg",
+            "arch": [
+              "x64",
+              "arm64"
+            ]
+          }
         ],
         "artifactName": "ApexChat-Mac-${version}-${arch}.${ext}"
       },
