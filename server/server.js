@@ -5,14 +5,22 @@ const cors = require("cors");
 const path = require("path");
 const fs = require("fs");
 
+const dataDir = path.join(__dirname, 'data');
+if (!fs.existsSync(dataDir)) {
+    fs.mkdirSync(dataDir, { recursive: true });
+}
+
 let config = { port: 3000, adminName: "IT" };
-const historyFile = path.join(__dirname, 'history.json');
+const configPath = path.join(dataDir, 'config.json');
+const historyFile = path.join(dataDir, 'history.json');
 
 try {
-    const rawConfig = fs.readFileSync(path.join(__dirname, 'config.json'), 'utf8');
-    config = { ...config, ...JSON.parse(rawConfig) };
+    if (fs.existsSync(configPath)) {
+        const rawConfig = fs.readFileSync(configPath, 'utf8');
+        config = { ...config, ...JSON.parse(rawConfig) };
+    }
 } catch (err) {
-    console.log("No config.json found or it's invalid. Using default settings.");
+    console.log("Error reading config.json. Using default settings.");
 }
 
 const app = express();
@@ -256,7 +264,7 @@ app.post("/api/config", (req, res) => {
 
     try {
         config = { ...config, ...newConfig };
-        fs.writeFileSync(path.join(__dirname, 'config.json'), JSON.stringify(config, null, 4));
+        fs.writeFileSync(configPath, JSON.stringify(config, null, 4));
         res.json({ message: "Configuration updated successfully. Restart server for port changes to take effect." });
     } catch (err) {
         console.error("Error writing server config:", err);

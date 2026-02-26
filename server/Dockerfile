@@ -13,7 +13,10 @@ RUN npm install --production
 # Copy the rest of the application code
 COPY . .
 
-# Expose the default port (can be overridden by environment variable)
+# Create data directory
+RUN mkdir -p /app/data
+
+# Expose the default port
 EXPOSE 3000
 
 # Set environment variables
