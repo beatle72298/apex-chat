@@ -10,13 +10,43 @@ let chatWindow = null;
 let ws = null;
 let messageQueue = [];
 
+// Persistent storage setup
+const userDataPath = app.getPath('userData');
+const configPath = path.join(userDataPath, 'config.json');
+
 let config = { serverUrl: "http://localhost:3000", theme: "system" };
-try {
-    const rawConfig = fs.readFileSync(path.join(__dirname, 'config.json'), 'utf8');
-    config = { ...config, ...JSON.parse(rawConfig) };
-} catch (err) {
-    console.log("No config.json found or it's invalid. Using default settings.");
+
+function loadConfig() {
+    try {
+        if (fs.existsSync(configPath)) {
+            const rawConfig = fs.readFileSync(configPath, 'utf8');
+            config = { ...config, ...JSON.parse(rawConfig) };
+        } else {
+            // Check for legacy config in app directory (during dev or first run after update)
+            const legacyPath = path.join(__dirname, 'config.json');
+            if (fs.existsSync(legacyPath)) {
+                const rawConfig = fs.readFileSync(legacyPath, 'utf8');
+                config = { ...config, ...JSON.parse(rawConfig) };
+                saveConfig(config); // Migrate to userData
+            }
+        }
+    } catch (err) {
+        console.error("Error loading config:", err);
+    }
 }
+
+function saveConfig(newConfig) {
+    try {
+        if (!fs.existsSync(userDataPath)) {
+            fs.mkdirSync(userDataPath, { recursive: true });
+        }
+        fs.writeFileSync(configPath, JSON.stringify(newConfig, null, 4));
+    } catch (err) {
+        console.error("Error saving config:", err);
+    }
+}
+
+loadConfig();
 
 let SERVER_URL = config.serverUrl;
 let allowReconnect = true;
@@ -179,7 +209,7 @@ ipcMain.on('save-config', (event, newConfig) => {
     config = newConfig;
     SERVER_URL = newConfig.serverUrl;
     
-    fs.writeFileSync(path.join(__dirname, 'config.json'), JSON.stringify(newConfig, null, 4));
+    saveConfig(newConfig);
     
     // Notify chat window about theme change
     if (chatWindow) {
@@ -200,8 +230,15 @@ ipcMain.on('save-config', (event, newConfig) => {
 
 
 function createTray() {
-  const iconPath = path.join(__dirname, "icon.png"); // optional tray icon
-  const trayIcon = nativeImage.createFromPath(iconPath);
+  const iconPath = path.join(__dirname, "icon.png");
+  let trayIcon = nativeImage.createFromPath(iconPath);
+  
+  if (process.platform === 'darwin') {
+    // macOS tray icons should be 22x22 or smaller
+    trayIcon = trayIcon.resize({ width: 18, height: 18 });
+    trayIcon.setTemplateImage(true);
+  }
+
   tray = new Tray(trayIcon.isEmpty() ? undefined : trayIcon);
   const contextMenu = Menu.buildFromTemplate([
     {
