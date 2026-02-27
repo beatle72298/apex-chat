@@ -14,7 +14,7 @@ fi
 
 echo "Checking for latest macOS ($ARCH_TAG) release..."
 RELEASE_JSON=$(curl -s $API_URL)
-DOWNLOAD_URL=$(echo "$RELEASE_JSON" | grep -o "https://[^" ]*ApexChat-Mac-[^"]*$ARCH_TAG.pkg" | head -n 1)
+DOWNLOAD_URL=$(echo "$RELEASE_JSON" | grep -o "https://github.com/[^\"]*/releases/download/[^\"]*ApexChat-Mac-[^\"]*${ARCH_TAG}.pkg" | head -n 1)
 
 if [ -n "$DOWNLOAD_URL" ]; then
     FILE_NAME=$(basename "$DOWNLOAD_URL")

@@ -1,4 +1,4 @@
 {
-    "serverUrl": "http://localhost:2008",
+    "serverUrl": "http://172.16.18.43:3000",
     "theme": "system"
 }
