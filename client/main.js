@@ -254,8 +254,13 @@ function createTray() {
       click: () => app.quit()
     }
   ]);
-  tray.setToolTip("IT Chat Agent");
+  tray.setToolTip("Apex Chat Agent");
   tray.setContextMenu(contextMenu);
+
+  // Add double-click to show chat (primarily for Windows)
+  tray.on('double-click', () => {
+    createChatWindow();
+  });
 }
 
 app.whenReady().then(() => {
