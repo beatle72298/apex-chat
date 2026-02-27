@@ -277,15 +277,31 @@ function renderClientList(clientData) {
     if (clientData) allClients = clientData;
     clientListEl.innerHTML = "";
 
+    // Update dynamic tag filters in the menu
+    updateTagFilterMenu();
+
     const filtered = allClients.filter(c => {
         const query = searchTerm.toLowerCase();
         const nickname = (c.nickname || "").toLowerCase();
         const id = c.info.clientId.toLowerCase();
         const hostname = c.info.hostname.toLowerCase();
-        const tags = (c.tags || []).join(" ").toLowerCase();
+        const clientTags = (c.tags || []);
+        const clientTagsStr = clientTags.join(" ").toLowerCase();
         
-        return id.includes(query) || nickname.includes(query) || hostname.includes(query) || tags.includes(query);
+        // Text Search
+        const matchesSearch = id.includes(query) || nickname.includes(query) || hostname.includes(query) || clientTagsStr.includes(query);
+        
+        // OS Filter
+        const matchesOS = osFilters.length === 0 || osFilters.includes(c.info.platform);
+        
+        // Tags Filter (AND logic - must have all selected tags)
+        const matchesTags = tagFilters.length === 0 || tagFilters.every(t => clientTags.includes(t));
+
+        return matchesSearch && matchesOS && matchesTags;
     });
+
+    // Show/Hide Clear button
+    clearFiltersButton.style.display = (searchTerm || osFilters.length > 0 || tagFilters.length > 0) ? "block" : "none";
 
     filtered.forEach(c => {
         // Update local store
@@ -440,6 +456,55 @@ messageInputEl.onkeydown = (e) => {
 };
 
 connect();
+
+function updateTagFilterMenu() {
+    const allAvailableTags = [...new Set(allClients.flatMap(c => c.tags || []))].sort();
+    
+    // Preserve current content but update labels/checks
+    tagFilterSection.innerHTML = "<strong>Tags</strong>";
+    if (allAvailableTags.length === 0) {
+        tagFilterSection.innerHTML += '<div style="font-size: 0.7em; color: #888; padding: 5px;">No tags available</div>';
+        return;
+    }
+
+    allAvailableTags.forEach(tag => {
+        const label = document.createElement("label");
+        const isChecked = tagFilters.includes(tag);
+        label.innerHTML = `<input type="checkbox" class="tag-filter" value="${tag}" ${isChecked ? 'checked' : ''}> ${tag}`;
+        tagFilterSection.appendChild(label);
+    });
+}
+
+// Global click handler to close dropdown when clicking outside
+window.addEventListener('click', (event) => {
+    if (!event.target.matches('#filter-dropdown-toggle') && !filterMenu.contains(event.target)) {
+        filterMenu.classList.remove('show');
+    }
+});
+
+filterDropdownToggle.onclick = () => {
+    filterMenu.classList.toggle('show');
+};
+
+// Handle filter changes via delegation
+filterMenu.addEventListener('change', (e) => {
+    if (e.target.classList.contains('os-filter')) {
+        osFilters = Array.from(document.querySelectorAll('.os-filter:checked')).map(cb => cb.value);
+    }
+    if (e.target.classList.contains('tag-filter')) {
+        tagFilters = Array.from(document.querySelectorAll('.tag-filter:checked')).map(cb => cb.value);
+    }
+    renderClientList();
+});
+
+clearFiltersButton.onclick = () => {
+    searchTerm = '';
+    clientSearchInput.value = '';
+    osFilters = [];
+    tagFilters = [];
+    document.querySelectorAll('.os-filter, .tag-filter').forEach(cb => cb.checked = false);
+    renderClientList();
+};
 
 clientSearchInput.addEventListener('input', (e) => {
     searchTerm = e.target.value;

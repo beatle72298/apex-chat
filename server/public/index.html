@@ -10,6 +10,24 @@
     <div class="client-list-container">
       <div class="sidebar-header">
         <input type="text" id="client-search" placeholder="Search systems or tags...">
+        <div class="sidebar-controls">
+            <div class="dropdown">
+                <button id="filter-dropdown-toggle" class="sidebar-button">Filters ▾</button>
+                <div id="filter-menu" class="dropdown-content">
+                    <div class="filter-section">
+                        <strong>OS</strong>
+                        <label><input type="checkbox" class="os-filter" value="win32"> Windows</label>
+                        <label><input type="checkbox" class="os-filter" value="darwin"> macOS</label>
+                        <label><input type="checkbox" class="os-filter" value="linux"> Linux</label>
+                    </div>
+                    <div class="filter-section" id="tag-filter-section">
+                        <strong>Tags</strong>
+                        <!-- Tags populated dynamically -->
+                    </div>
+                </div>
+            </div>
+            <button id="clear-filters-button" class="sidebar-button" style="display: none;">Clear</button>
+        </div>
       </div>
       <ul id="client-list"></ul>
     </div>
