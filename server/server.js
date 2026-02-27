@@ -4,6 +4,7 @@ const WebSocket = require("ws");
 const cors = require("cors");
 const path = require("path");
 const fs = require("fs");
+const basicAuth = require('express-basic-auth');
 
 const dataDir = path.join(__dirname, 'data');
 if (!fs.existsSync(dataDir)) {
@@ -26,6 +27,22 @@ try {
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+// Apply Basic Auth to Admin UI and management APIs
+const ADMIN_USER = process.env.ADMIN_USER || "admin";
+const ADMIN_PASS = process.env.ADMIN_PASS;
+
+if (ADMIN_PASS) {
+    console.log("Admin authentication enabled.");
+    app.use(basicAuth({
+        users: { [ADMIN_USER]: ADMIN_PASS },
+        challenge: true,
+        realm: 'Apex Chat Admin',
+    }));
+} else {
+    console.warn("WARNING: ADMIN_PASS not set. Admin UI is currently public.");
+}
+
 app.use(express.static(path.join(__dirname, "public")));
 
 const server = http.createServer(app);
