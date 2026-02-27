@@ -10,6 +10,11 @@ const chatMessagesContainerEl = document.getElementById("chat-messages");
 const messageInputEl = document.getElementById("message-input");
 const sendButtonEl = document.getElementById("send-button");
 const closeChatButton = document.getElementById("close-chat-button");
+const clientSearchInput = document.getElementById("client-search");
+const chatHeaderMetadata = document.getElementById("chat-header-metadata");
+const clientNicknameInput = document.getElementById("client-nickname-input");
+const clientTagsInput = document.getElementById("client-tags-input");
+const saveMetadataButton = document.getElementById("save-metadata-button");
 
 // Settings Modal Elements
 const settingsButton = document.getElementById('settings-button');
@@ -24,6 +29,8 @@ const serverSettingsStatus = document.getElementById('server-settings-status');
 let currentTheme = 'system';
 let typingTimeout;
 let isTyping = false;
+let searchTerm = '';
+let allClients = [];
 
 function getTypingIndicator() {
     return document.getElementById("typing-indicator");
@@ -194,6 +201,7 @@ function deselectClient() {
     selectedClientId = null;
     document.querySelectorAll(".client-item").forEach(el => el.classList.remove("selected"));
     chatHeaderEl.textContent = "Select a client to begin chatting";
+    chatHeaderMetadata.style.display = "none";
     chatMessagesEl.innerHTML = `
         <div id="typing-indicator" class="typing-indicator">
             <div class="typing-dot"></div>
@@ -231,6 +239,11 @@ async function selectClient(clientId) {
     if (client) {
         chatHeaderEl.textContent = `Chat with ${client.info.clientId}`;
         clients[clientId].unread = 0; // Reset unread count
+        
+        // Show and populate metadata
+        chatHeaderMetadata.style.display = "flex";
+        clientNicknameInput.value = client.nickname || "";
+        clientTagsInput.value = (client.tags || []).join(", ");
     }
 
     // Show close button
@@ -261,8 +274,20 @@ function getOSIcon(platform) {
 }
 
 function renderClientList(clientData) {
+    if (clientData) allClients = clientData;
     clientListEl.innerHTML = "";
-    clientData.forEach(c => {
+
+    const filtered = allClients.filter(c => {
+        const query = searchTerm.toLowerCase();
+        const nickname = (c.nickname || "").toLowerCase();
+        const id = c.info.clientId.toLowerCase();
+        const hostname = c.info.hostname.toLowerCase();
+        const tags = (c.tags || []).join(" ").toLowerCase();
+        
+        return id.includes(query) || nickname.includes(query) || hostname.includes(query) || tags.includes(query);
+    });
+
+    filtered.forEach(c => {
         // Update local store
         if (!clients[c.info.clientId]) {
             clients[c.info.clientId] = { ...c, unread: 0 };
@@ -279,12 +304,15 @@ function renderClientList(clientData) {
         item.setAttribute("data-client-id", client.info.clientId);
 
         const osIcon = getOSIcon(client.info.platform);
+        const tagsHtml = (client.tags || []).map(t => `<span class="tag-pill">${t}</span>`).join("");
 
         item.innerHTML = `
             <div class="status-indicator ${client.status === 'online' ? 'status-online' : 'status-offline'}"></div>
             <div class="client-info">
+                ${client.nickname ? `<div class="client-nickname">${client.nickname}</div>` : ''}
                 <span class="client-id">${osIcon} ${client.info.clientId}</span>
                 <span class="client-details">${client.info.username} on ${client.info.hostname}</span>
+                <div class="client-tags-display">${tagsHtml}</div>
             </div>
             ${client.unread > 0 ? `<div class="unread-badge">${client.unread}</div>` : ''}
         `;
@@ -412,6 +440,42 @@ messageInputEl.onkeydown = (e) => {
 };
 
 connect();
+
+clientSearchInput.addEventListener('input', (e) => {
+    searchTerm = e.target.value;
+    renderClientList();
+});
+
+saveMetadataButton.onclick = async () => {
+    if (!selectedClientId) return;
+    
+    const nickname = clientNicknameInput.value.trim();
+    const tags = clientTagsInput.value.split(',').map(t => t.trim()).filter(t => t !== "");
+
+    try {
+        const res = await fetch(`/api/clients/${encodeURIComponent(selectedClientId)}/metadata`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ nickname, tags })
+        });
+        if (res.ok) {
+            // Update local state and re-render list
+            if (clients[selectedClientId]) {
+                clients[selectedClientId].nickname = nickname;
+                clients[selectedClientId].tags = tags;
+            }
+            // Update allClients as well for persistence in this session
+            const clientIdx = allClients.findIndex(c => c.info.clientId === selectedClientId);
+            if (clientIdx !== -1) {
+                allClients[clientIdx].nickname = nickname;
+                allClients[clientIdx].tags = tags;
+            }
+            renderClientList();
+        }
+    } catch (err) {
+        console.error("Error saving metadata:", err);
+    }
+};
 
 // Load initial theme
 fetch('/api/config')

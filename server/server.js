@@ -267,6 +267,23 @@ app.get("/api/clients", (req, res) => {
     res.json(clientListForAdmins);
 });
 
+// REST endpoint to update client metadata
+app.post("/api/clients/:clientId/metadata", (req, res) => {
+    const { clientId } = req.params;
+    const { nickname, tags } = req.body;
+    
+    if (!knownClients[clientId]) {
+        return res.status(404).json({ error: "Client not found" });
+    }
+
+    knownClients[clientId].nickname = nickname || "";
+    knownClients[clientId].tags = Array.isArray(tags) ? tags : [];
+    
+    saveHistory();
+    broadcastClientList();
+    res.json({ ok: true });
+});
+
 // REST endpoint to get server configuration
 app.get("/api/config", (req, res) => {
     res.json(config);

@@ -8,11 +8,21 @@
 <body>
   <div class="container">
     <div class="client-list-container">
+      <div class="sidebar-header">
+        <input type="text" id="client-search" placeholder="Search systems or tags...">
+      </div>
       <ul id="client-list"></ul>
     </div>
     <div class="chat-container">
       <div class="chat-header" id="chat-header">
-        <div id="chat-header-text">Select a client to begin chatting</div>
+        <div class="chat-header-info">
+            <div id="chat-header-text">Select a client to begin chatting</div>
+            <div id="chat-header-metadata" class="chat-header-metadata" style="display: none;">
+                <input type="text" id="client-nickname-input" placeholder="Custom Nickname">
+                <input type="text" id="client-tags-input" placeholder="Tags (comma separated)">
+                <button id="save-metadata-button" class="mini-button">Save</button>
+            </div>
+        </div>
         <div class="header-buttons">
             <button id="close-chat-button" class="header-button" style="display: none;">✕</button>
             <button id="settings-button" class="header-button">⚙️</button>
