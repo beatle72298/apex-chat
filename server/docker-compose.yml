@@ -7,8 +7,8 @@ services:
       - ./data:/app/data
     environment:
       - PORT=3000
-      - ADMIN_USER=admin
-      - ADMIN_PASS=admin
+      - ADMIN_USER=admin  # Optional, but recommended
+      - ADMIN_PASS=admin  # Optional, but recommended
     restart: always
 
   # Automatically updates the chat server when a new image is pushed to GitHub
