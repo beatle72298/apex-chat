@@ -15,6 +15,10 @@ const chatHeaderMetadata = document.getElementById("chat-header-metadata");
 const clientNicknameInput = document.getElementById("client-nickname-input");
 const clientTagsInput = document.getElementById("client-tags-input");
 const saveMetadataButton = document.getElementById("save-metadata-button");
+const filterDropdownToggle = document.getElementById("filter-dropdown-toggle");
+const filterMenu = document.getElementById("filter-menu");
+const tagFilterSection = document.getElementById("tag-filter-section");
+const clearFiltersButton = document.getElementById("clear-filters-button");
 
 // Settings Modal Elements
 const settingsButton = document.getElementById('settings-button');
@@ -31,6 +35,8 @@ let typingTimeout;
 let isTyping = false;
 let searchTerm = '';
 let allClients = [];
+let osFilters = [];
+let tagFilters = [];
 
 function getTypingIndicator() {
     return document.getElementById("typing-indicator");
