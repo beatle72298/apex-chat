@@ -26,17 +26,67 @@ const settingsModal = document.getElementById('settings-modal');
 const closeButton = settingsModal.querySelector('.close-button');
 const serverPortInput = document.getElementById('server-port-input');
 const adminNameInput = document.getElementById('admin-name-input');
+const secretKeyInput = document.getElementById('secret-key-input');
 const themeSelect = document.getElementById('theme-select');
 const saveServerSettingsButton = document.getElementById('save-server-settings');
 const serverSettingsStatus = document.getElementById('server-settings-status');
 
 let currentTheme = 'system';
+let secretKey = '';
+let cryptoKey = null;
 let typingTimeout;
 let isTyping = false;
 let searchTerm = '';
 let allClients = [];
 let osFilters = [];
 let tagFilters = [];
+
+async function deriveKey(secret) {
+    if (!secret) return null;
+    const encoder = new TextEncoder();
+    const data = encoder.encode(secret);
+    const hash = await crypto.subtle.digest('SHA-256', data);
+    return await crypto.subtle.importKey(
+        'raw', 
+        hash, 
+        { name: 'AES-GCM' }, 
+        false, 
+        ['encrypt', 'decrypt']
+    );
+}
+
+async function encrypt(text) {
+    if (!cryptoKey) return { encrypted: false, message: text };
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const encoder = new TextEncoder();
+    const ciphertext = await crypto.subtle.encrypt(
+        { name: 'AES-GCM', iv: iv },
+        cryptoKey,
+        encoder.encode(text)
+    );
+    return {
+        encrypted: true,
+        message: btoa(String.fromCharCode(...new Uint8Array(ciphertext))),
+        iv: btoa(String.fromCharCode(...iv))
+    };
+}
+
+async function decrypt(encryptedData, ivStr) {
+    if (!cryptoKey || !encryptedData || !ivStr) return encryptedData;
+    try {
+        const iv = new Uint8Array(atob(ivStr).split('').map(c => c.charCodeAt(0)));
+        const data = new Uint8Array(atob(encryptedData).split('').map(c => c.charCodeAt(0)));
+        const decrypted = await crypto.subtle.decrypt(
+            { name: 'AES-GCM', iv: iv },
+            cryptoKey,
+            data
+        );
+        return new TextDecoder().decode(decrypted);
+    } catch (e) {
+        console.error("Decryption failed:", e);
+        return "[Decryption failed]";
+    }
+}
 
 function getTypingIndicator() {
     return document.getElementById("typing-indicator");
@@ -66,6 +116,7 @@ settingsButton.addEventListener('click', async () => {
         const config = await res.json();
         serverPortInput.value = config.port;
         adminNameInput.value = config.adminName || "IT";
+        secretKeyInput.value = config.secretKey || "";
         themeSelect.value = config.theme || "system";
     } catch (err) {
         console.error("Error fetching server config:", err);
@@ -89,6 +140,7 @@ window.addEventListener('click', (event) => {
 saveServerSettingsButton.addEventListener('click', async () => {
     const newPort = parseInt(serverPortInput.value, 10);
     const newAdminName = adminNameInput.value.trim();
+    const newSecretKey = secretKeyInput.value.trim();
     const newTheme = themeSelect.value;
 
     if (isNaN(newPort) || newPort <= 0) {
@@ -107,12 +159,21 @@ saveServerSettingsButton.addEventListener('click', async () => {
         const res = await fetch('/api/config', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ port: newPort, adminName: newAdminName, theme: newTheme })
+            body: JSON.stringify({ 
+                port: newPort, 
+                adminName: newAdminName, 
+                secretKey: newSecretKey,
+                theme: newTheme 
+            })
         });
         if (res.ok) {
             serverSettingsStatus.textContent = "Settings saved! Restart server for port changes to take effect.";
             serverSettingsStatus.style.color = 'green';
             applyTheme(newTheme);
+            
+            // Update local crypto key
+            secretKey = newSecretKey;
+            cryptoKey = await deriveKey(secretKey);
         } else {
             const { error } = await res.json();
             serverSettingsStatus.textContent = `Error saving settings: ${error}`;
@@ -126,7 +187,7 @@ saveServerSettingsButton.addEventListener('click', async () => {
 });
 
 
-function renderMessages(messages) {
+async function renderMessages(messages) {
     // Clear everything but keep/recreate typing indicator at the end
     chatMessagesEl.innerHTML = `
         <div id="typing-indicator" class="typing-indicator">
@@ -138,10 +199,10 @@ function renderMessages(messages) {
     const indicator = document.getElementById("typing-indicator");
     indicator.style.display = "none";
 
-    messages.forEach(msg => {
+    for (const msg of messages) {
         // We append BEFORE the indicator
-        appendMessage(msg, false, indicator);
-    });
+        await appendMessage(msg, false, indicator);
+    }
     chatMessagesContainerEl.scrollTop = chatMessagesContainerEl.scrollHeight; // Scroll to bottom after loading all
 }
 
@@ -165,7 +226,7 @@ function formatMessage(text) {
     return formatted.replace(/\n/g, "<br>");
 }
 
-function appendMessage(data, scroll = true, beforeElement = null) {
+async function appendMessage(data, scroll = true, beforeElement = null) {
     // If it's not from the selected client, it's from IT/Me
     const isFromMe = data.from !== selectedClientId;
 
@@ -181,7 +242,11 @@ function appendMessage(data, scroll = true, beforeElement = null) {
     sender.textContent = isFromMe ? "Me" : data.from;
 
     const content = document.createElement("div");
-    content.innerHTML = formatMessage(data.message);
+    let messageText = data.message;
+    if (data.encrypted) {
+        messageText = await decrypt(data.message, data.iv);
+    }
+    content.innerHTML = formatMessage(messageText);
     
     const meta = document.createElement("div");
     meta.className = "message-timestamp";
@@ -353,7 +418,7 @@ function connect() {
         ws.send(JSON.stringify({ type: "register", role: "admin" }));
     };
 
-    ws.onmessage = (event) => {
+    ws.onmessage = async (event) => {
         const data = JSON.parse(event.data);
         if (data.type === "client_list") {
             renderClientList(data.clients);
@@ -364,7 +429,7 @@ function connect() {
 
             // If it's a message for the selected client, append it
             if (conversationId === selectedClientId) {
-                appendMessage(data);
+                await appendMessage(data);
                 const indicator = getTypingIndicator();
                 if (indicator) indicator.style.display = 'none';
             } else {
@@ -410,10 +475,16 @@ async function sendMessage() {
     if (!selectedClientId || !msg) return;
 
     try {
+        const encryptedData = await encrypt(msg);
         const res = await fetch("/api/send", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ clientId: selectedClientId, message: msg })
+            body: JSON.stringify({ 
+                clientId: selectedClientId, 
+                message: encryptedData.message,
+                encrypted: encryptedData.encrypted,
+                iv: encryptedData.iv
+            })
         });
         if (res.ok) {
             messageInputEl.value = "";
@@ -548,10 +619,12 @@ saveMetadataButton.onclick = async () => {
     }
 };
 
-// Load initial theme
+// Load initial theme and secret key
 fetch('/api/config')
     .then(res => res.json())
-    .then(config => {
+    .then(async config => {
         applyTheme(config.theme || 'system');
+        secretKey = config.secretKey || "";
+        cryptoKey = await deriveKey(secretKey);
     })
-    .catch(err => console.error("Error loading initial theme:", err));
+    .catch(err => console.error("Error loading initial config:", err));

@@ -438,7 +438,7 @@ body {
 }
 
 .message-from-it .sender-name {
-    text-align: right;
+    text-align: left;
     color: rgba(255, 255, 255, 0.9);
 }
 

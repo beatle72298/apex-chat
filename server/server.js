@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require("express");
 const http = require("http");
 const WebSocket = require("ws");
@@ -11,7 +12,7 @@ if (!fs.existsSync(dataDir)) {
     fs.mkdirSync(dataDir, { recursive: true });
 }
 
-let config = { port: 3000, adminName: "IT" };
+let config = { port: 3000, adminName: "IT", secretKey: "apex-chat-secret" };
 const configPath = path.join(dataDir, 'config.json');
 const historyFile = path.join(dataDir, 'history.json');
 
@@ -140,11 +141,13 @@ wss.on("connection", (ws) => {
         broadcastClientList();
 
       } else if (data.type === "chat_message") {
-        console.log(`Message from ${clientId}: ${data.message}`);
+        console.log(`Message from ${clientId}: ${data.encrypted ? '[Encrypted]' : data.message}`);
         
         const messageData = {
           from: clientId,
           message: data.message,
+          encrypted: data.encrypted || false,
+          iv: data.iv || null,
           timestamp: new Date().toISOString(),
         };
         
@@ -207,7 +210,7 @@ wss.on("connection", (ws) => {
 
 // REST endpoint to send a message to a client
 app.post("/api/send", (req, res) => {
-  const { clientId, message } = req.body;
+  const { clientId, message, encrypted, iv } = req.body;
   const client = knownClients[clientId];
 
   if (!client || client.status !== 'online') {
@@ -218,6 +221,8 @@ app.post("/api/send", (req, res) => {
     from: config.adminName || "IT",
     to: clientId,
     message,
+    encrypted: encrypted || false,
+    iv: iv || null,
     timestamp: new Date().toISOString(),
   };
 
@@ -230,6 +235,8 @@ app.post("/api/send", (req, res) => {
     type: "incoming_message",
     message,
     from: config.adminName || "IT",
+    encrypted: messageData.encrypted,
+    iv: messageData.iv,
     timestamp: messageData.timestamp,
   });
   client.ws.send(payload);

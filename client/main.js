@@ -14,7 +14,7 @@ let messageQueue = [];
 const userDataPath = app.getPath('userData');
 const configPath = path.join(userDataPath, 'config.json');
 
-let config = { serverUrl: "http://localhost:3000", theme: "system" };
+let config = { serverUrl: "http://localhost:3000", theme: "system", secretKey: "apex-chat-secret" };
 
 function loadConfig() {
     try {
@@ -171,12 +171,14 @@ function connectWebSocket() {
   });
 }
 
-ipcMain.on("send_reply", (event, message) => {
+ipcMain.on("send_reply", (event, data) => {
   if (ws && ws.readyState === WebSocket.OPEN) {
     ws.send(
       JSON.stringify({
         type: "chat_message",
-        message
+        message: data.message,
+        encrypted: data.encrypted,
+        iv: data.iv
       })
     );
   }
@@ -211,9 +213,10 @@ ipcMain.on('save-config', (event, newConfig) => {
     
     saveConfig(newConfig);
     
-    // Notify chat window about theme change
+    // Notify chat window about changes
     if (chatWindow) {
         chatWindow.webContents.send('theme-changed', config.theme);
+        chatWindow.webContents.send('current-config', config);
     }
 
     // Restart connection

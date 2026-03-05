@@ -6,15 +6,66 @@ const typingIndicator = document.getElementById("typing-indicator");
 
 let typingTimeout;
 let isTyping = false;
+let secretKey = '';
+let cryptoKey = null;
+
+async function deriveKey(secret) {
+    if (!secret) return null;
+    const encoder = new TextEncoder();
+    const data = encoder.encode(secret);
+    const hash = await crypto.subtle.digest('SHA-256', data);
+    return await crypto.subtle.importKey(
+        'raw', 
+        hash, 
+        { name: 'AES-GCM' }, 
+        false, 
+        ['encrypt', 'decrypt']
+    );
+}
+
+async function encrypt(text) {
+    if (!cryptoKey) return { encrypted: false, message: text };
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const encoder = new TextEncoder();
+    const ciphertext = await crypto.subtle.encrypt(
+        { name: 'AES-GCM', iv: iv },
+        cryptoKey,
+        encoder.encode(text)
+    );
+    return {
+        encrypted: true,
+        message: btoa(String.fromCharCode(...new Uint8Array(ciphertext))),
+        iv: btoa(String.fromCharCode(...iv))
+    };
+}
+
+async function decrypt(encryptedData, ivStr) {
+    if (!cryptoKey || !encryptedData || !ivStr) return encryptedData;
+    try {
+        const iv = new Uint8Array(atob(ivStr).split('').map(c => c.charCodeAt(0)));
+        const data = new Uint8Array(atob(encryptedData).split('').map(c => c.charCodeAt(0)));
+        const decrypted = await crypto.subtle.decrypt(
+            { name: 'AES-GCM', iv: iv },
+            cryptoKey,
+            data
+        );
+        return new TextDecoder().decode(decrypted);
+    } catch (e) {
+        console.error("Decryption failed:", e);
+        return "[Decryption failed]";
+    }
+}
 
 function applyTheme(theme) {
   const isDark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
   document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
 }
 
-// Handle initial theme
-window.electronAPI.onCurrentConfig((_event, config) => {
+// Handle initial theme and key
+window.electronAPI.onCurrentConfig(async (_event, config) => {
   applyTheme(config.theme || 'system');
+  secretKey = config.secretKey || "";
+  cryptoKey = await deriveKey(secretKey);
 });
 window.electronAPI.getConfig();
 
@@ -64,7 +115,7 @@ document.addEventListener('click', (e) => {
   }
 });
 
-function appendMessage(from, message, isMe = false) {
+async function appendMessage(from, message, isMe = false, encrypted = false, iv = null) {
   const div = document.createElement("div");
   div.className = "msg " + (isMe ? "msg-me" : "msg-it");
   
@@ -77,7 +128,11 @@ function appendMessage(from, message, isMe = false) {
   sender.textContent = isMe ? "Me" : from;
 
   const content = document.createElement("div");
-  content.innerHTML = formatMessage(message);
+  let messageText = message;
+  if (encrypted && iv) {
+      messageText = await decrypt(message, iv);
+  }
+  content.innerHTML = formatMessage(messageText);
   
   const meta = document.createElement("span");
   meta.className = "timestamp";
@@ -91,8 +146,8 @@ function appendMessage(from, message, isMe = false) {
   chatLog.scrollTop = chatLog.scrollHeight;
 }
 
-window.electronAPI.onIncomingMessage((_event, data) => {
-  appendMessage(data.from || "IT", data.message);
+window.electronAPI.onIncomingMessage(async (_event, data) => {
+  await appendMessage(data.from || "IT", data.message, false, data.encrypted, data.iv);
   typingIndicator.style.display = 'none';
 });
 
@@ -104,12 +159,18 @@ window.electronAPI.onTypingStatus((_event, isTyping) => {
     }
 });
 
-function sendMessage() {
+async function sendMessage() {
   const text = replyBox.value.trim();
   if (!text) return;
   
-  window.electronAPI.sendReply(text);
-  appendMessage("Me", text, true);
+  const encryptedData = await encrypt(text);
+  window.electronAPI.sendReply({
+      message: encryptedData.message,
+      encrypted: encryptedData.encrypted,
+      iv: encryptedData.iv
+  });
+  
+  await appendMessage("Me", text, true);
   replyBox.value = "";
   replyBox.style.height = 'auto';
 
