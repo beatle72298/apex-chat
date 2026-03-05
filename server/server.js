@@ -306,7 +306,24 @@ app.post("/api/config", (req, res) => {
     try {
         config = { ...config, ...newConfig };
         fs.writeFileSync(configPath, JSON.stringify(config, null, 4));
-        res.json({ message: "Configuration updated successfully. Restart server for port changes to take effect." });
+        
+        // Broadcast configuration update to all clients
+        const configUpdatePayload = JSON.stringify({
+            type: "config_update",
+            config: {
+                secretKey: config.secretKey,
+                theme: config.theme,
+                adminName: config.adminName
+            }
+        });
+
+        wss.clients.forEach(client => {
+            if (client.readyState === WebSocket.OPEN) {
+                client.send(configUpdatePayload);
+            }
+        });
+
+        res.json({ message: "Configuration updated successfully." });
     } catch (err) {
         console.error("Error writing server config:", err);
         res.status(500).json({ error: "Failed to write server configuration" });

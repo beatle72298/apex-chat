@@ -150,6 +150,18 @@ function connectWebSocket() {
             chatWindow.webContents.send("incoming_message", data);
           }
         }
+      } else if (data.type === "config_update") {
+        // Merge the new config from server (secretKey, theme, adminName)
+        const updatedConfig = { ...config, ...data.config };
+        config = updatedConfig;
+        saveConfig(config);
+        
+        // Notify chat window to update immediately
+        if (chatWindow) {
+            chatWindow.webContents.send("current-config", config);
+            chatWindow.webContents.send("theme-changed", config.theme);
+        }
+        console.log("Configuration pushed from server and saved.");
       } else if (data.type === "typing") {
         if (chatWindow && !chatWindow.webContents.isLoading()) {
           chatWindow.webContents.send("typing_status", data.isTyping);
