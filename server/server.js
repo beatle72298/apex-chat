@@ -6,11 +6,30 @@ const cors = require("cors");
 const path = require("path");
 const fs = require("fs");
 const basicAuth = require('express-basic-auth');
+const multer = require('multer');
 
 const dataDir = path.join(__dirname, 'data');
+const uploadDir = path.join(dataDir, 'uploads');
 if (!fs.existsSync(dataDir)) {
     fs.mkdirSync(dataDir, { recursive: true });
 }
+if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+// Multer storage config
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    // Unique filename with original extension
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const ext = path.extname(file.originalname);
+    cb(null, uniqueSuffix + ext);
+  }
+});
+const upload = multer({ storage: storage });
 
 let config = { port: 3000, adminName: "IT", secretKey: "apex-chat-secret", soundEnabled: true };
 const configPath = path.join(dataDir, 'config.json');
@@ -45,6 +64,21 @@ if (ADMIN_PASS) {
 }
 
 app.use(express.static(path.join(__dirname, "public")));
+app.use('/uploads', express.static(uploadDir));
+
+// REST endpoint for file uploads
+app.post("/api/upload", upload.single("file"), (req, res) => {
+    if (!req.file) {
+        return res.status(400).json({ error: "No file uploaded." });
+    }
+    const fileUrl = `/uploads/${req.file.filename}`;
+    res.json({ 
+        url: fileUrl, 
+        fileName: req.file.originalname,
+        fileType: req.file.mimetype,
+        size: req.file.size
+    });
+});
 
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
@@ -148,6 +182,9 @@ wss.on("connection", (ws) => {
           message: data.message,
           encrypted: data.encrypted || false,
           iv: data.iv || null,
+          fileUrl: data.fileUrl || null,
+          fileName: data.fileName || null,
+          fileType: data.fileType || null,
           timestamp: new Date().toISOString(),
         };
         
@@ -210,7 +247,7 @@ wss.on("connection", (ws) => {
 
 // REST endpoint to send a message to a client
 app.post("/api/send", (req, res) => {
-  const { clientId, message, encrypted, iv } = req.body;
+  const { clientId, message, encrypted, iv, fileUrl, fileName, fileType } = req.body;
   const client = knownClients[clientId];
 
   if (!client || client.status !== 'online') {
@@ -223,6 +260,9 @@ app.post("/api/send", (req, res) => {
     message,
     encrypted: encrypted || false,
     iv: iv || null,
+    fileUrl: fileUrl || null,
+    fileName: fileName || null,
+    fileType: fileType || null,
     timestamp: new Date().toISOString(),
   };
 
@@ -237,6 +277,9 @@ app.post("/api/send", (req, res) => {
     from: config.adminName || "IT",
     encrypted: messageData.encrypted,
     iv: messageData.iv,
+    fileUrl: messageData.fileUrl,
+    fileName: messageData.fileName,
+    fileType: messageData.fileType,
     timestamp: messageData.timestamp,
   });
   client.ws.send(payload);

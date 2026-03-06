@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Tray, Menu, nativeImage, shell } = require("electron");
+const { app, BrowserWindow, Tray, Menu, nativeImage, shell, dialog } = require("electron");
 const { ipcMain } = require("electron");
 const path = require("path");
 const os = require("os");
@@ -209,6 +209,19 @@ ipcMain.on("send-typing-status", (event, isTyping) => {
 
 ipcMain.on("open-link", (event, url) => {
   shell.openExternal(url);
+});
+
+ipcMain.handle("select-file", async () => {
+    const { canceled, filePaths } = await dialog.showOpenDialog({
+        properties: ['openFile']
+    });
+    if (canceled || filePaths.length === 0) {
+        return null;
+    }
+    const filePath = filePaths[0];
+    const fileName = path.basename(filePath);
+    const fileContent = fs.readFileSync(filePath);
+    return { path: filePath, name: fileName, data: fileContent };
 });
 
 ipcMain.on("open-settings", () => {

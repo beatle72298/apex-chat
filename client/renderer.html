@@ -187,6 +187,37 @@
       font-weight: bold;
     }
     button#send:hover { background: #0056b3; }
+
+    /* Attachment Styling */
+    .attachment-container {
+      padding: 8px;
+      background: rgba(0,0,0,0.05);
+      border-radius: 8px;
+      margin-top: 8px;
+    }
+    [data-theme="dark"] .attachment-container {
+      background: rgba(255,255,255,0.05);
+    }
+    .chat-image {
+      max-width: 100%;
+      max-height: 250px;
+      border-radius: 8px;
+      display: block;
+      cursor: pointer;
+    }
+    .file-download-link {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      text-decoration: none;
+      color: inherit;
+      font-weight: bold;
+      padding: 5px;
+      word-break: break-all;
+    }
+    .file-download-link:hover {
+      text-decoration: underline;
+    }
   </style>
 </head>
 <body>
@@ -206,6 +237,7 @@
   </div>
   <audio id="notification-sound" src="tone.wav"></audio>
   <div id="controls">
+    <button id="attach-btn" class="settings-button" title="Attach file">📎</button>
     <textarea id="reply" rows="1" placeholder="Type a message..."></textarea>
     <!-- (Enter to send, and Shift+Enter for new line) -->
     <button id="send">Send</button>

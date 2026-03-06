@@ -2,6 +2,7 @@ const chatLog = document.getElementById("chat-log");
 const replyBox = document.getElementById("reply");
 const sendBtn = document.getElementById("send");
 const settingsBtn = document.getElementById("open-settings");
+const attachBtn = document.getElementById("attach-btn");
 const typingIndicator = document.getElementById("typing-indicator");
 const notificationSound = document.getElementById("notification-sound");
 
@@ -10,6 +11,7 @@ let isTyping = false;
 let secretKey = '';
 let cryptoKey = null;
 let soundEnabled = true;
+let serverUrl = '';
 
 async function deriveKey(secret) {
     if (!secret) return null;
@@ -66,6 +68,7 @@ function applyTheme(theme) {
 // Handle initial theme and key
 window.electronAPI.onCurrentConfig(async (_event, config) => {
   applyTheme(config.theme || 'system');
+  serverUrl = config.serverUrl || 'http://localhost:3000';
   secretKey = config.secretKey || "";
   soundEnabled = config.soundEnabled !== false;
   cryptoKey = await deriveKey(secretKey);
@@ -118,7 +121,7 @@ document.addEventListener('click', (e) => {
   }
 });
 
-async function appendMessage(from, message, isMe = false, encrypted = false, iv = null) {
+async function appendMessage(from, message, isMe = false, encrypted = false, iv = null, fileUrl = null, fileName = null, fileType = null) {
   const div = document.createElement("div");
   div.className = "msg " + (isMe ? "msg-me" : "msg-it");
   
@@ -135,7 +138,47 @@ async function appendMessage(from, message, isMe = false, encrypted = false, iv 
   if (encrypted && iv) {
       messageText = await decrypt(message, iv);
   }
-  content.innerHTML = formatMessage(messageText);
+  
+  if (messageText) {
+    const textSpan = document.createElement("div");
+    textSpan.innerHTML = formatMessage(messageText);
+    content.appendChild(textSpan);
+  }
+
+  if (fileUrl) {
+    const fileContainer = document.createElement("div");
+    fileContainer.className = "attachment-container";
+    fileContainer.style.marginTop = "8px";
+
+    const fullUrl = fileUrl.startsWith('http') ? fileUrl : `${serverUrl}${fileUrl}`;
+
+    if (fileType && fileType.startsWith("image/")) {
+        const img = document.createElement("img");
+        img.src = fullUrl;
+        img.className = "chat-image";
+        img.style.maxWidth = "100%";
+        img.style.borderRadius = "8px";
+        img.style.cursor = "pointer";
+        img.onclick = () => window.electronAPI.openLink(fullUrl);
+        fileContainer.appendChild(img);
+    }
+
+    const fileLink = document.createElement("a");
+    fileLink.href = "#"; // Prevent default
+    fileLink.className = "file-download-link";
+    fileLink.style.display = "block";
+    fileLink.style.marginTop = "4px";
+    fileLink.style.fontSize = "0.85em";
+    fileLink.style.color = isMe ? "#fff" : "inherit";
+    fileLink.innerHTML = `📎 ${fileName || 'Download File'}`;
+    fileLink.onclick = (e) => {
+        e.preventDefault();
+        window.electronAPI.openLink(fullUrl);
+    };
+    fileContainer.appendChild(fileLink);
+    
+    content.appendChild(fileContainer);
+  }
   
   const meta = document.createElement("span");
   meta.className = "timestamp";
@@ -150,7 +193,7 @@ async function appendMessage(from, message, isMe = false, encrypted = false, iv 
 }
 
 window.electronAPI.onIncomingMessage(async (_event, data) => {
-  await appendMessage(data.from || "IT", data.message, false, data.encrypted, data.iv);
+  await appendMessage(data.from || "IT", data.message, false, data.encrypted, data.iv, data.fileUrl, data.fileName, data.fileType);
   typingIndicator.style.display = 'none';
   
   if (soundEnabled && notificationSound) {
@@ -187,6 +230,38 @@ async function sendMessage() {
   window.electronAPI.sendTypingStatus(false);
   clearTimeout(typingTimeout);
 }
+
+attachBtn.onclick = async () => {
+    const fileResult = await window.electronAPI.selectFile();
+    if (!fileResult) return;
+
+    const { name, data } = fileResult;
+    const blob = new Blob([data]);
+    const formData = new FormData();
+    formData.append("file", blob, name);
+
+    try {
+        const res = await fetch(`${serverUrl}/api/upload`, {
+            method: "POST",
+            body: formData
+        });
+        if (res.ok) {
+            const fileData = await res.json();
+            // Send as a message with file info
+            window.electronAPI.sendReply({
+                message: "",
+                encrypted: false,
+                fileUrl: fileData.url,
+                fileName: fileData.fileName,
+                fileType: fileData.fileType
+            });
+            await appendMessage("Me", "", true, false, null, fileData.url, fileData.fileName, fileData.fileType);
+        }
+    } catch (err) {
+        console.error("File upload failed:", err);
+        alert("File upload failed.");
+    }
+};
 
 sendBtn.onclick = sendMessage;
 

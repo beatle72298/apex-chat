@@ -9,5 +9,6 @@ contextBridge.exposeInMainWorld("electronAPI", {
   onThemeChanged: (callback) => ipcRenderer.on("theme-changed", callback),
   onTypingStatus: (callback) => ipcRenderer.on("typing_status", callback),
   getConfig: () => ipcRenderer.send("get-config"),
-  onCurrentConfig: (callback) => ipcRenderer.on("current-config", callback)
+  onCurrentConfig: (callback) => ipcRenderer.on("current-config", callback),
+  selectFile: () => ipcRenderer.invoke("select-file")
 });

@@ -475,6 +475,49 @@ body {
     text-align: right;
 }
 
+/* Attachment Styling */
+.attachment-container {
+    padding: 8px;
+    background: rgba(0,0,0,0.05);
+    border-radius: 8px;
+    margin-top: 8px;
+}
+
+[data-theme="dark"] .attachment-container {
+    background: rgba(255,255,255,0.05);
+}
+
+.chat-image {
+    max-width: 100%;
+    max-height: 300px;
+    border-radius: 8px;
+    display: block;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.chat-image:hover {
+    transform: scale(1.02);
+}
+
+.file-download-link {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    text-decoration: none;
+    color: inherit;
+    font-weight: bold;
+    padding: 5px;
+}
+
+.file-download-link:hover {
+    text-decoration: underline;
+}
+
+.message-from-it .file-download-link {
+    color: white;
+}
+
 /* Modal Styles */
 .modal {
     display: none; /* Hidden by default */

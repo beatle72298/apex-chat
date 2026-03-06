@@ -9,6 +9,8 @@ const chatMessagesEl = document.getElementById("chat-messages-inner");
 const chatMessagesContainerEl = document.getElementById("chat-messages");
 const messageInputEl = document.getElementById("message-input");
 const sendButtonEl = document.getElementById("send-button");
+const attachButtonEl = document.getElementById("attach-button");
+const fileInputEl = document.getElementById("file-input");
 const closeChatButton = document.getElementById("close-chat-button");
 const clientSearchInput = document.getElementById("client-search");
 const chatHeaderMetadata = document.getElementById("chat-header-metadata");
@@ -265,7 +267,43 @@ async function appendMessage(data, scroll = true, beforeElement = null) {
     if (data.encrypted) {
         messageText = await decrypt(data.message, data.iv);
     }
-    content.innerHTML = formatMessage(messageText);
+    
+    // Add text content
+    if (messageText) {
+        const textSpan = document.createElement("div");
+        textSpan.innerHTML = formatMessage(messageText);
+        content.appendChild(textSpan);
+    }
+
+    // Add file attachment if present
+    if (data.fileUrl) {
+        const fileContainer = document.createElement("div");
+        fileContainer.className = "attachment-container";
+        fileContainer.style.marginTop = "8px";
+
+        if (data.fileType && data.fileType.startsWith("image/")) {
+            const img = document.createElement("img");
+            img.src = data.fileUrl;
+            img.className = "chat-image";
+            img.style.maxWidth = "100%";
+            img.style.borderRadius = "8px";
+            img.style.cursor = "pointer";
+            img.onclick = () => window.open(data.fileUrl, '_blank');
+            fileContainer.appendChild(img);
+        }
+
+        const fileLink = document.createElement("a");
+        fileLink.href = data.fileUrl;
+        fileLink.download = data.fileName || "attachment";
+        fileLink.className = "file-download-link";
+        fileLink.style.display = "block";
+        fileLink.style.marginTop = "4px";
+        fileLink.style.fontSize = "0.85em";
+        fileLink.innerHTML = `📎 ${data.fileName || 'Download File'}`;
+        fileContainer.appendChild(fileLink);
+        
+        content.appendChild(fileContainer);
+    }
     
     const meta = document.createElement("div");
     meta.className = "message-timestamp";
@@ -286,6 +324,45 @@ async function appendMessage(data, scroll = true, beforeElement = null) {
         chatMessagesContainerEl.scrollTop = chatMessagesContainerEl.scrollHeight;
     }
 }
+
+attachButtonEl.onclick = () => {
+    if (selectedClientId) fileInputEl.click();
+};
+
+fileInputEl.onchange = async () => {
+    if (!fileInputEl.files.length || !selectedClientId) return;
+    const file = fileInputEl.files[0];
+    
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+        const res = await fetch("/api/upload", {
+            method: "POST",
+            body: formData
+        });
+        if (res.ok) {
+            const fileData = await res.json();
+            // Send as a message with file info
+            await fetch("/api/send", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ 
+                    clientId: selectedClientId, 
+                    message: "", // Empty text for file-only messages
+                    encrypted: false,
+                    fileUrl: fileData.url,
+                    fileName: fileData.fileName,
+                    fileType: fileData.fileType
+                })
+            });
+            fileInputEl.value = ""; // Clear for next use
+        }
+    } catch (err) {
+        console.error("File upload failed:", err);
+        alert("File upload failed.");
+    }
+};
 
 function deselectClient() {
     selectedClientId = null;
