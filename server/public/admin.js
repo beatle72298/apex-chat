@@ -30,10 +30,25 @@ const secretKeyInput = document.getElementById('secret-key-input');
 const themeSelect = document.getElementById('theme-select');
 const saveServerSettingsButton = document.getElementById('save-server-settings');
 const serverSettingsStatus = document.getElementById('server-settings-status');
+const soundToggle = document.getElementById('sound-toggle');
+const notificationSound = document.getElementById('notification-sound');
+const testSoundButton = document.getElementById('test-sound-button');
 
 let currentTheme = 'system';
 let secretKey = '';
 let cryptoKey = null;
+let soundEnabled = true;
+
+if (testSoundButton) {
+    testSoundButton.onclick = (e) => {
+        e.preventDefault();
+        if (notificationSound) {
+            notificationSound.currentTime = 0;
+            notificationSound.play().catch(err => console.log("Sound test error:", err));
+        }
+    };
+}
+
 let typingTimeout;
 let isTyping = false;
 let searchTerm = '';
@@ -118,6 +133,7 @@ settingsButton.addEventListener('click', async () => {
         adminNameInput.value = config.adminName || "IT";
         secretKeyInput.value = config.secretKey || "";
         themeSelect.value = config.theme || "system";
+        soundToggle.checked = config.soundEnabled !== false;
     } catch (err) {
         console.error("Error fetching server config:", err);
         serverSettingsStatus.textContent = "Error fetching config.";
@@ -142,6 +158,7 @@ saveServerSettingsButton.addEventListener('click', async () => {
     const newAdminName = adminNameInput.value.trim();
     const newSecretKey = secretKeyInput.value.trim();
     const newTheme = themeSelect.value;
+    const newSoundEnabled = soundToggle.checked;
 
     if (isNaN(newPort) || newPort <= 0) {
         serverSettingsStatus.textContent = "Please enter a valid port number.";
@@ -163,7 +180,8 @@ saveServerSettingsButton.addEventListener('click', async () => {
                 port: newPort, 
                 adminName: newAdminName, 
                 secretKey: newSecretKey,
-                theme: newTheme 
+                theme: newTheme,
+                soundEnabled: newSoundEnabled
             })
         });
         if (res.ok) {
@@ -171,7 +189,8 @@ saveServerSettingsButton.addEventListener('click', async () => {
             serverSettingsStatus.style.color = 'green';
             applyTheme(newTheme);
             
-            // Update local crypto key
+            // Update local state
+            soundEnabled = newSoundEnabled;
             secretKey = newSecretKey;
             cryptoKey = await deriveKey(secretKey);
         } else {
@@ -432,7 +451,16 @@ function connect() {
                 await appendMessage(data);
                 const indicator = getTypingIndicator();
                 if (indicator) indicator.style.display = 'none';
-            } else {
+            }
+
+            // Play sound for incoming client message
+            if (!data.to && soundEnabled && notificationSound) {
+                notificationSound.currentTime = 0;
+                notificationSound.play().catch(e => console.log("Sound play error:", e));
+            }
+
+            // If it's NOT the selected client, increment unread and update list
+            if (conversationId !== selectedClientId) {
                 // Otherwise, increment unread and update list (only if it's from a client)
                 if (clients[conversationId] && !data.to) {
                     clients[conversationId].unread = (clients[conversationId].unread || 0) + 1;
@@ -625,6 +653,7 @@ fetch('/api/config')
     .then(async config => {
         applyTheme(config.theme || 'system');
         secretKey = config.secretKey || "";
+        soundEnabled = config.soundEnabled !== false;
         cryptoKey = await deriveKey(secretKey);
     })
     .catch(err => console.error("Error loading initial config:", err));

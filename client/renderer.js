@@ -3,11 +3,13 @@ const replyBox = document.getElementById("reply");
 const sendBtn = document.getElementById("send");
 const settingsBtn = document.getElementById("open-settings");
 const typingIndicator = document.getElementById("typing-indicator");
+const notificationSound = document.getElementById("notification-sound");
 
 let typingTimeout;
 let isTyping = false;
 let secretKey = '';
 let cryptoKey = null;
+let soundEnabled = true;
 
 async function deriveKey(secret) {
     if (!secret) return null;
@@ -65,6 +67,7 @@ function applyTheme(theme) {
 window.electronAPI.onCurrentConfig(async (_event, config) => {
   applyTheme(config.theme || 'system');
   secretKey = config.secretKey || "";
+  soundEnabled = config.soundEnabled !== false;
   cryptoKey = await deriveKey(secretKey);
 });
 window.electronAPI.getConfig();
@@ -149,6 +152,11 @@ async function appendMessage(from, message, isMe = false, encrypted = false, iv 
 window.electronAPI.onIncomingMessage(async (_event, data) => {
   await appendMessage(data.from || "IT", data.message, false, data.encrypted, data.iv);
   typingIndicator.style.display = 'none';
+  
+  if (soundEnabled && notificationSound) {
+      notificationSound.currentTime = 0;
+      notificationSound.play().catch(e => console.log("Sound play error:", e));
+  }
 });
 
 // Handle incoming typing status

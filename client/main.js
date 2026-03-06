@@ -14,7 +14,7 @@ let messageQueue = [];
 const userDataPath = app.getPath('userData');
 const configPath = path.join(userDataPath, 'config.json');
 
-let config = { serverUrl: "http://localhost:3000", theme: "system", secretKey: "apex-chat-secret" };
+let config = { serverUrl: "http://localhost:3000", theme: "system", secretKey: "apex-chat-secret", soundEnabled: true };
 
 function loadConfig() {
     try {

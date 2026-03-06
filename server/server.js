@@ -12,7 +12,7 @@ if (!fs.existsSync(dataDir)) {
     fs.mkdirSync(dataDir, { recursive: true });
 }
 
-let config = { port: 3000, adminName: "IT", secretKey: "apex-chat-secret" };
+let config = { port: 3000, adminName: "IT", secretKey: "apex-chat-secret", soundEnabled: true };
 const configPath = path.join(dataDir, 'config.json');
 const historyFile = path.join(dataDir, 'history.json');
 

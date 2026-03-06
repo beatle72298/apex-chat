@@ -79,11 +79,17 @@
           <option value="light">Light</option>
           <option value="dark">Dark</option>
       </select>
+      <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 20px;">
+          <input type="checkbox" id="sound-toggle" checked>
+          Enable Notification Sounds
+          <button id="test-sound-button" style="padding: 2px 8px; font-size: 0.8em; margin-left: 10px;">Test</button>
+      </label>
       <button id="save-server-settings">Save</button>
       <div id="server-settings-status" class="settings-status"></div>
     </div>
   </div>
 
+  <audio id="notification-sound" src="tone.wav"></audio>
   <script src="admin.js"></script>
 </body>
 </html>

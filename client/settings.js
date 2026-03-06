@@ -2,6 +2,7 @@ const { ipcRenderer } = require('electron');
 
 const serverUrlInput = document.getElementById('serverUrl');
 const themeSelect = document.getElementById('themeSelect');
+const soundToggle = document.getElementById('soundToggle');
 const saveBtn = document.getElementById('saveBtn');
 const statusEl = document.getElementById('status');
 
@@ -19,6 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
 ipcRenderer.on('current-config', (event, config) => {
     serverUrlInput.value = config.serverUrl;
     themeSelect.value = config.theme || 'system';
+    soundToggle.checked = config.soundEnabled !== false;
     applyTheme(themeSelect.value);
 });
 
@@ -31,11 +33,13 @@ themeSelect.addEventListener('change', () => {
 saveBtn.addEventListener('click', () => {
     const newUrl = serverUrlInput.value.trim();
     const newTheme = themeSelect.value;
+    const newSoundEnabled = soundToggle.checked;
     
     if (newUrl) {
         ipcRenderer.send('save-config', { 
             serverUrl: newUrl, 
-            theme: newTheme 
+            theme: newTheme,
+            soundEnabled: newSoundEnabled
         });
         statusEl.textContent = 'Settings saved. Restarting connection...';
         // The main process will handle the actual save and restart
