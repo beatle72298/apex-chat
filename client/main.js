@@ -60,7 +60,7 @@ function createSettingsWindow() {
     const iconPath = path.join(__dirname, "icon.png");
     settingsWindow = new BrowserWindow({
         width: 450,
-        height: 380,
+        height: 420,
         title: "Settings",
         alwaysOnTop: true,
         resizable: false,
