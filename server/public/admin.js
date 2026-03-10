@@ -337,30 +337,44 @@ fileInputEl.onchange = async () => {
     formData.append("file", file);
 
     try {
+        console.log("Uploading file:", file.name);
         const res = await fetch("/api/upload", {
             method: "POST",
             body: formData
         });
+        
         if (res.ok) {
             const fileData = await res.json();
-            // Send as a message with file info
-            await fetch("/api/send", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ 
-                    clientId: selectedClientId, 
-                    message: "", // Empty text for file-only messages
+            console.log("Upload successful:", fileData.url);
+            
+            // Send file message via WebSocket for consistency and to bypass REST auth issues
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                const payload = {
+                    type: "chat_message",
+                    message: "",
+                    to: selectedClientId,
                     encrypted: false,
                     fileUrl: fileData.url,
                     fileName: fileData.fileName,
                     fileType: fileData.fileType
-                })
-            });
+                };
+                ws.send(JSON.stringify(payload));
+                
+                // Locally append the message so the sender sees it immediately
+                await appendMessage({
+                    from: "Me",
+                    ...payload,
+                    timestamp: new Date().toISOString()
+                });
+            }
             fileInputEl.value = ""; // Clear for next use
+        } else {
+            const errorData = await res.json();
+            throw new Error(errorData.error || "Upload failed");
         }
     } catch (err) {
         console.error("File upload failed:", err);
-        alert("File upload failed.");
+        alert("File upload failed: " + err.message);
     }
 };
 
@@ -581,28 +595,34 @@ async function sendMessage() {
 
     try {
         const encryptedData = await encrypt(msg);
-        const res = await fetch("/api/send", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ 
-                clientId: selectedClientId, 
+        
+        // Use WebSocket for consistency and to bypass REST auth issues
+        if (ws && ws.readyState === WebSocket.OPEN) {
+            const payload = {
+                type: "chat_message",
+                to: selectedClientId,
                 message: encryptedData.message,
                 encrypted: encryptedData.encrypted,
                 iv: encryptedData.iv
-            })
-        });
-        if (res.ok) {
+            };
+            ws.send(JSON.stringify(payload));
+            
+            // Locally append the message so the sender sees it immediately
+            await appendMessage({
+                from: "Me",
+                ...payload,
+                timestamp: new Date().toISOString()
+            });
+
             messageInputEl.value = "";
             isTyping = false;
-            if (ws && ws.readyState === WebSocket.OPEN) {
-                ws.send(JSON.stringify({ type: "typing", isTyping: false, to: selectedClientId }));
-            }
+            ws.send(JSON.stringify({ type: "typing", isTyping: false, to: selectedClientId }));
             clearTimeout(typingTimeout);
         } else {
-            const { error } = await res.json();
-            alert("Error: " + error);
+            alert("Connection lost. Reconnecting...");
         }
     } catch (err) {
+        console.error("Failed to send message:", err);
         alert("Failed to send message.");
     }
 }

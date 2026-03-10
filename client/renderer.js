@@ -68,7 +68,11 @@ function applyTheme(theme) {
 // Handle initial theme and key
 window.electronAPI.onCurrentConfig(async (_event, config) => {
   applyTheme(config.theme || 'system');
-  serverUrl = config.serverUrl || 'http://localhost:3000';
+  let rawUrl = config.serverUrl || 'http://localhost:3000';
+  if (rawUrl && !rawUrl.startsWith('http')) {
+      rawUrl = 'http://' + rawUrl;
+  }
+  serverUrl = rawUrl;
   secretKey = config.secretKey || "";
   soundEnabled = config.soundEnabled !== false;
   cryptoKey = await deriveKey(secretKey);

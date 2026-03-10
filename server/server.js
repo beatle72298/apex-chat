@@ -48,6 +48,23 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Move file routes ABOVE basicAuth so clients can upload/download without auth
+app.use('/uploads', express.static(uploadDir));
+
+// REST endpoint for file uploads
+app.post("/api/upload", upload.single("file"), (req, res) => {
+    if (!req.file) {
+        return res.status(400).json({ error: "No file uploaded." });
+    }
+    const fileUrl = `/uploads/${req.file.filename}`;
+    res.json({ 
+        url: fileUrl, 
+        fileName: req.file.originalname,
+        fileType: req.file.mimetype,
+        size: req.file.size
+    });
+});
+
 // Apply Basic Auth to Admin UI and management APIs
 const ADMIN_USER = process.env.ADMIN_USER || "admin";
 const ADMIN_PASS = process.env.ADMIN_PASS;
@@ -64,21 +81,6 @@ if (ADMIN_PASS) {
 }
 
 app.use(express.static(path.join(__dirname, "public")));
-app.use('/uploads', express.static(uploadDir));
-
-// REST endpoint for file uploads
-app.post("/api/upload", upload.single("file"), (req, res) => {
-    if (!req.file) {
-        return res.status(400).json({ error: "No file uploaded." });
-    }
-    const fileUrl = `/uploads/${req.file.filename}`;
-    res.json({ 
-        url: fileUrl, 
-        fileName: req.file.originalname,
-        fileType: req.file.mimetype,
-        size: req.file.size
-    });
-});
 
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
@@ -175,10 +177,13 @@ wss.on("connection", (ws) => {
         broadcastClientList();
 
       } else if (data.type === "chat_message") {
-        console.log(`Message from ${clientId}: ${data.encrypted ? '[Encrypted]' : data.message}`);
+        const from = isAdmin ? (config.adminName || "IT") : clientId;
+        const targetId = isAdmin ? data.to : null; // Admin sends TO a client
+        
+        console.log(`Message from ${from}: ${data.encrypted ? '[Encrypted]' : data.message}`);
         
         const messageData = {
-          from: clientId,
+          from: from,
           message: data.message,
           encrypted: data.encrypted || false,
           iv: data.iv || null,
@@ -187,21 +192,45 @@ wss.on("connection", (ws) => {
           fileType: data.fileType || null,
           timestamp: new Date().toISOString(),
         };
-        
-        if (knownClients[clientId]) {
-            knownClients[clientId].messages.push(messageData);
-            saveHistory();
-        }
 
-        // Forward client message to all admins
-        const payload = JSON.stringify({
-          type: "incoming_message",
-          ...messageData
-        });
-        for (const adminWs of admins) {
-          if (adminWs.readyState === WebSocket.OPEN) {
-            adminWs.send(payload);
-          }
+        if (isAdmin) {
+            // Admin sending to a client
+            const targetClient = knownClients[targetId];
+            if (targetClient) {
+                targetClient.messages.push(messageData);
+                saveHistory();
+                
+                const clientPayload = JSON.stringify({
+                    type: "incoming_message",
+                    ...messageData
+                });
+                if (targetClient.ws && targetClient.ws.readyState === WebSocket.OPEN) {
+                    targetClient.ws.send(clientPayload);
+                }
+                
+                // Also broadcast to other admins
+                for (const adminWs of admins) {
+                    if (adminWs !== ws && adminWs.readyState === WebSocket.OPEN) {
+                        adminWs.send(clientPayload);
+                    }
+                }
+            }
+        } else {
+            // Client sending to admins
+            if (knownClients[clientId]) {
+                knownClients[clientId].messages.push(messageData);
+                saveHistory();
+            }
+
+            const payload = JSON.stringify({
+                type: "incoming_message",
+                ...messageData
+            });
+            for (const adminWs of admins) {
+                if (adminWs.readyState === WebSocket.OPEN) {
+                    adminWs.send(payload);
+                }
+            }
         }
       } else if (data.type === "typing") {
         // Forward typing status
