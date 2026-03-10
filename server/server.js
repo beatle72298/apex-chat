@@ -385,7 +385,8 @@ app.post("/api/config", (req, res) => {
             config: {
                 secretKey: config.secretKey,
                 theme: config.theme,
-                adminName: config.adminName
+                adminName: config.adminName,
+                serverUrl: config.serverUrl || null
             }
         });
 

@@ -188,9 +188,12 @@ ipcMain.on("send_reply", (event, data) => {
     ws.send(
       JSON.stringify({
         type: "chat_message",
-        message: data.message,
-        encrypted: data.encrypted,
-        iv: data.iv
+        message: data.message || "",
+        encrypted: data.encrypted || false,
+        iv: data.iv || null,
+        fileUrl: data.fileUrl || null,
+        fileName: data.fileName || null,
+        fileType: data.fileType || null
       })
     );
   }

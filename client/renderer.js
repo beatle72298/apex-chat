@@ -72,6 +72,10 @@ window.electronAPI.onCurrentConfig(async (_event, config) => {
   if (rawUrl && !rawUrl.startsWith('http')) {
       rawUrl = 'http://' + rawUrl;
   }
+  // Normalize by removing trailing slash
+  if (rawUrl.endsWith('/')) {
+      rawUrl = rawUrl.slice(0, -1);
+  }
   serverUrl = rawUrl;
   secretKey = config.secretKey || "";
   soundEnabled = config.soundEnabled !== false;

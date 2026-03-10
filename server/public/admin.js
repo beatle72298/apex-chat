@@ -264,12 +264,12 @@ async function appendMessage(data, scroll = true, beforeElement = null) {
 
     const content = document.createElement("div");
     let messageText = data.message;
-    if (data.encrypted) {
+    if (data.encrypted && data.iv) {
         messageText = await decrypt(data.message, data.iv);
     }
     
     // Add text content
-    if (messageText) {
+    if (messageText && messageText.trim() !== "") {
         const textSpan = document.createElement("div");
         textSpan.innerHTML = formatMessage(messageText);
         content.appendChild(textSpan);
@@ -280,26 +280,31 @@ async function appendMessage(data, scroll = true, beforeElement = null) {
         const fileContainer = document.createElement("div");
         fileContainer.className = "attachment-container";
         fileContainer.style.marginTop = "8px";
+        
+        // Ensure absolute path for the Admin UI browser
+        const fullUrl = data.fileUrl.startsWith('http') ? data.fileUrl : `${window.location.origin}${data.fileUrl}`;
 
         if (data.fileType && data.fileType.startsWith("image/")) {
             const img = document.createElement("img");
-            img.src = data.fileUrl;
+            img.src = fullUrl;
             img.className = "chat-image";
             img.style.maxWidth = "100%";
             img.style.borderRadius = "8px";
             img.style.cursor = "pointer";
-            img.onclick = () => window.open(data.fileUrl, '_blank');
+            img.onclick = () => window.open(fullUrl, '_blank');
             fileContainer.appendChild(img);
         }
 
         const fileLink = document.createElement("a");
-        fileLink.href = data.fileUrl;
+        fileLink.href = fullUrl;
         fileLink.download = data.fileName || "attachment";
         fileLink.className = "file-download-link";
         fileLink.style.display = "block";
         fileLink.style.marginTop = "4px";
         fileLink.style.fontSize = "0.85em";
+        fileLink.style.color = isFromMe ? "white" : "inherit";
         fileLink.innerHTML = `📎 ${data.fileName || 'Download File'}`;
+        fileLink.target = "_blank";
         fileContainer.appendChild(fileLink);
         
         content.appendChild(fileContainer);
